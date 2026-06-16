@@ -1920,19 +1920,19 @@ async def stock_quick(ticker: str, request: Request):
 @app.get("/stocks/page", response_class=HTMLResponse)
 async def stock_page(request: Request):
     """Smart Stock Analyzer UI."""
-    return templates.TemplateResponse("stock_analysis.html", {"request": request})
+    return templates.TemplateResponse("stock_analysis.html", context={"request": request})
 
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Serve the main chatbot UI"""
-    return templates.TemplateResponse("expense_tracker.html", {"request": request})
+    return templates.TemplateResponse("expense_tracker.html", context={"request": request})
 
 
 @app.get("/chat", response_class=HTMLResponse)
 async def chat(request: Request):
     """Alias for home page"""
-    return templates.TemplateResponse("expense_tracker.html", {"request": request})
+    return templates.TemplateResponse("expense_tracker.html", context={"request": request})
 
 
 if __name__ == "__main__":

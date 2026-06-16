@@ -1,0 +1,36 @@
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+*.pem
+credentials.json
+secrets.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs & temp
+*.log
+tmp/
+temp/
+uploads/
+
+# Local venv (keep out of git)
+venv/
+.venv/

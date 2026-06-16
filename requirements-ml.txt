@@ -1,0 +1,8 @@
+# Optional heavy ML packages (~3.5 GB total).
+# Install only on paid Render/VM instances with enough disk:
+#   pip install -r requirements-ml.txt
+#
+# Enables: receipt RAG upload (/api/doc-expense) and local Whisper voice.
+sentence-transformers>=2.2.0
+faiss-cpu>=1.7.4
+openai-whisper>=20231117

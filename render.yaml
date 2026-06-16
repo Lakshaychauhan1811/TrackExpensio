@@ -1,0 +1,17 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: trackexpensio
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+      - key: FASTAPI_HOST
+        value: "0.0.0.0"
+      # Set these in the Render dashboard (never commit secrets):
+      # MONGODB_URI, MONGODB_DB, GROQ_API_KEY
+      # GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI
+      # ALLOWED_ORIGINS=https://your-app.onrender.com

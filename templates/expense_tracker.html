@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrackExpensio – Complete Financial Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/expense_tracker.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-wallet"></i>
+                <span class="brand-title">Track<span>Expensio</span></span>
+            </div>
+            <div class="nav-actions">
+                <div class="user-profile-container" id="userProfileContainer" style="display: none;">
+                    <div class="user-profile-trigger" id="userProfileTrigger">
+                        <img id="userAvatar" src="" alt="User" class="user-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="user-avatar-fallback" style="display: none;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="user-name" id="userName"></span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="user-profile-dropdown" id="userProfileDropdown">
+                        <div class="user-profile-header">
+                            <img id="dropdownAvatar" src="" alt="User" class="dropdown-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="dropdown-avatar-fallback" style="display: none;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="user-profile-info">
+                                <div class="user-profile-name" id="dropdownUserName"></div>
+                                <div class="user-profile-email" id="dropdownUserEmail"></div>
+                            </div>
+                        </div>
+                        <div class="user-profile-divider"></div>
+                        <button class="user-profile-item" id="signOutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Sign Out</span>
+                        </button>
+                    </div>
+                </div>
+                <button class="nav-btn accent" id="gmailConnectBtn" title="Save your data permanently with Google">
+                    <i class="fas fa-cloud"></i> <span class="nav-btn-text">Sync with Google</span>
+                </button>
+                <button class="nav-btn" id="helpBtn">
+                    <i class="fas fa-question-circle"></i> <span class="nav-btn-text">Help</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                <button class="sidebar-btn active" data-section="dashboard">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </button>
+                <button class="sidebar-btn" data-section="chat">
+                    <i class="fas fa-comments"></i> AI Chat
+                </button>
+                <button class="sidebar-btn" data-section="expenses">
+                    <i class="fas fa-receipt"></i> Expenses
+                </button>
+                <button class="sidebar-btn" data-section="income">
+                    <i class="fas fa-dollar-sign"></i> Income
+                </button>
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fas fa-cog"></i> Features</h3>
+                <button class="sidebar-btn" data-section="budget">
+                    <i class="fas fa-piggy-bank"></i> Budget
+                </button>
+                <button class="sidebar-btn" data-section="recurring">
+                    <i class="fas fa-sync-alt"></i> Recurring
+                </button>
+                <button class="sidebar-btn" data-section="savings">
+                    <i class="fas fa-bullseye"></i> Savings Goals
+                </button>
+                <button class="sidebar-btn" data-section="debt">
+                    <i class="fas fa-credit-card"></i> Debt
+                </button>
+                <button class="sidebar-btn" data-section="investments">
+                    <i class="fas fa-chart-bar"></i> Investments
+                </button>
+                <a href="/stocks/page" class="sidebar-btn sidebar-link">
+                    <i class="fas fa-chart-candlestick"></i> Stock Analyzer
+                </a>
+                <button class="sidebar-btn" data-section="reports">
+                    <i class="fas fa-file-alt"></i> Reports
+                </button>
+                <button class="sidebar-btn" data-section="taxes">
+                    <i class="fas fa-calculator"></i> Tax Calculator
+                </button>
+                <button class="sidebar-btn" data-section="credit">
+                    <i class="fas fa-star"></i> Credit Score
+                </button>
+                <button class="sidebar-btn" data-section="bills">
+                    <i class="fas fa-bell"></i> Bill Reminders
+                </button>
+                <button class="sidebar-btn" data-section="bank">
+                    <i class="fas fa-university"></i> Bank Sync
+                </button>
+                <button class="sidebar-btn" data-section="currency">
+                    <i class="fas fa-globe"></i> Multi-Currency
+                </button>
+                <button class="sidebar-btn" data-section="audit">
+                    <i class="fas fa-shield-alt"></i> Audit Log
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content-area">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="content-section active">
+                <div class="section-header">
+                    <div>
+                        <span class="brand-chip">TrackExpensio</span>
+                        <h1><i class="fas fa-chart-line"></i> Financial Command Center</h1>
+                        <p>Comprehensive financial intelligence at your fingertips</p>
+                    </div>
+                </div>
+
+                <div class="model-hero">
+                    <div class="hero-copy">
+                        <p class="hero-eyebrow">Feature-in-Motion · Groq + LangGraph</p>
+                        <h2>Single assistant, every money move.</h2>
+                        <ul>
+                            <li><i class="fas fa-magic"></i> Conversational budgets, reminders & insights</li>
+                            <li><i class="fas fa-receipt"></i> Drag-drop bills → auto expenses via RAG</li>
+                            <li><i class="fas fa-chart-area"></i> Live Yahoo Finance lookups & portfolio tips</li>
+                        </ul>
+                    </div>
+                    <div class="hero-visual">
+                        <div class="hero-orb"></div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card income">
+                        <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
+                        <div class="stat-info">
+                            <h3>Total Income</h3>
+                            <p class="stat-value" id="totalIncome">$0.00</p>
+                            <span class="stat-period">This Month</span>
+                        </div>
+                    </div>
+                    <div class="stat-card expense">
+                        <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
+                        <div class="stat-info">
+                            <h3>Total Expenses</h3>
+                            <p class="stat-value" id="totalExpense">$0.00</p>
+                            <span class="stat-period">This Month</span>
+                        </div>
+                    </div>
+                    <div class="stat-card savings">
+                        <div class="stat-icon"><i class="fas fa-piggy-bank"></i></div>
+                        <div class="stat-info">
+                            <h3>Savings</h3>
+                            <p class="stat-value" id="totalSavings">$0.00</p>
+                            <span class="stat-period">Goals Progress</span>
+                        </div>
+                    </div>
+                    <div class="stat-card networth">
+                        <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+                        <div class="stat-info">
+                            <h3>Net Worth</h3>
+                            <p class="stat-value" id="netWorth">$0.00</p>
+                            <span class="stat-period">Total Assets</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h2><i class="fas fa-bolt"></i> Instant Actions</h2>
+                    <div class="action-grid">
+                        <button type="button" class="action-card" data-quick-action="expense">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Add Expense</span>
+                        </button>
+                        <button type="button" class="action-card" data-quick-action="income">
+                            <i class="fas fa-dollar-sign"></i>
+                            <span>Add Income</span>
+                        </button>
+                        <button type="button" class="action-card" data-quick-action="budget">
+                            <i class="fas fa-piggy-bank"></i>
+                            <span>Set Budget</span>
+                        </button>
+                        <button type="button" class="action-card" data-quick-action="chat">
+                            <i class="fas fa-robot"></i>
+                            <span>Ask AI</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="market-widget">
+                    <div class="market-header">
+                        <div>
+                            <h3><i class="fas fa-line-chart"></i> Live Market Pulse</h3>
+                            <p>Powered by Yahoo Finance via LangGraph MCP</p>
+                        </div>
+                        <form class="market-form" data-market-widget="dashboard">
+                            <input type="text" class="market-symbol-input" placeholder="AAPL, Netflix, or INFY.NS" autocomplete="off">
+                            <button type="submit" class="btn-primary">Fetch</button>
+                        </form>
+                    </div>
+                    <div class="market-result">
+                        Enter a ticker to see price, range, and market cap.
+                    </div>
+                </div>
+
+                <!-- Privacy & Cloud Sync -->
+                <div class="secure-sync-card">
+                    <div>
+                        <h3><i class="fas fa-lock"></i> Private MongoDB Vault</h3>
+                        <p>Each user gets an isolated MongoDB collection with end-to-end encryption at rest, so other users can never touch your numbers.</p>
+                    </div>
+                    <button type="button" class="btn-primary ghost" id="dashboardGmailBtn">
+                        <i class="fas fa-cloud"></i> Sync with Gmail & Drive
+                    </button>
+                </div>
+
+                <!-- Audio & Document Intelligence -->
+                <div class="intelligence-row single">
+                    <div class="intelligence-card rag-card">
+                        <div class="card-header">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <div>
+                                <h3>Intelligent Document Processor</h3>
+                                <p>Upload invoices or PDFs – advanced RAG pipeline extracts amounts, merchants, and dates</p>
+                            </div>
+                        </div>
+                        <label class="file-drop tall">
+                            <input type="file" id="docUpload" accept=".pdf,.png,.jpg,.jpeg">
+                            <i class="fas fa-cloud-arrow-up"></i>
+                            <span>Drop your bill PDF / image</span>
+                        </label>
+                        <ul class="rag-highlights">
+                            <li><i class="fas fa-circle-check"></i> LangGraph + FAISS memory</li>
+                            <li><i class="fas fa-circle-check"></i> Groq LLM for structured extraction</li>
+                            <li><i class="fas fa-circle-check"></i> Saved privately in MongoDB</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Feature Marquee -->
+                <div class="features-showcase">
+                    <h2><i class="fas fa-star"></i> 14 Feature Pods</h2>
+                    <div class="feature-grid" id="featureGrid"></div>
+                </div>
+            </section>
+
+            <!-- AI Chat Section -->
+            <section id="chat" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-robot"></i> Financial Intelligence Assistant</h1>
+                    <p>Engage with your financial data through natural conversation</p>
+                </div>
+
+                <div class="chat-container">
+                    <div class="chat-examples">
+                        <p class="chat-examples-label"><i class="fas fa-microphone"></i> Try saying</p>
+                        <div class="example-chips">
+                            <button type="button" class="example-chip" onclick="sendExample('Add 150 rupees for snacks today')">
+                                Add expense
+                            </button>
+                            <button type="button" class="example-chip" onclick="sendExample('How much money did I spend this month?')">
+                                My spending
+                            </button>
+                            <button type="button" class="example-chip" onclick="sendExample('What are my upcoming bills?')">
+                                Upcoming bills
+                            </button>
+                            <button type="button" class="example-chip" onclick="sendExample('Analyze AAPL with RSI and MACD signals')">
+                                Stock analysis
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message bot-message">
+                            <div class="message-avatar"><i class="fas fa-robot"></i></div>
+                            <div class="message-content">
+                                <p>Greetings! I'm your Financial Intelligence Assistant. I can assist you with:</p>
+                                <ul>
+                                    <li>Add expenses and income</li>
+                                    <li>Check budgets and savings goals</li>
+                                    <li>Generate financial reports</li>
+                                    <li>Track debts and investments</li>
+                                    <li>And much more!</li>
+                                </ul>
+                                <p>Just ask me anything in natural language!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <button class="chat-upload-btn" id="chatDocButton" title="Upload receipt">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                        <input type="text" id="chatInput" class="chat-input" placeholder="Query your financial data in natural language...">
+                        <button class="chat-mic-btn" id="chatMicButton" title="Voice command (Click and speak)">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button class="chat-send-btn" onclick="sendChatMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                        <input type="file" id="chatDocInput" accept=".pdf,.png,.jpg,.jpeg" hidden>
+                    </div>
+                    <div id="voiceStatus" class="voice-status" style="display: none;">
+                        <div class="voice-pulse"></div>
+                        <span id="voiceStatusText">Listening...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Expenses Section -->
+            <section id="expenses" class="content-section">
+                <div class="section-header">
+                    <div>
+                        <h1><i class="fas fa-receipt"></i> Expenses</h1>
+                        <p>Track spending, see totals, and review where your money went</p>
+                    </div>
+                    <button class="btn-primary" onclick="showAddExpenseModal()">
+                        <i class="fas fa-plus"></i> Add Expense
+                    </button>
+                </div>
+
+                <div class="expense-toolbar">
+                    <div class="period-pills" id="expensePeriodPills">
+                        <button type="button" class="period-pill active" data-period="30d" onclick="setExpensePeriod('30d')">Last 30 days</button>
+                        <button type="button" class="period-pill" data-period="6m" onclick="setExpensePeriod('6m')">Last 6 months</button>
+                        <button type="button" class="period-pill" data-period="all" onclick="setExpensePeriod('all')">All time</button>
+                    </div>
+                    <div class="expense-toolbar-actions">
+                        <button type="button" class="btn-secondary btn-sm" id="gmailSyncBtn" onclick="syncGmailBills()" title="Import bills from Gmail">
+                            <i class="fas fa-envelope"></i> Import from Gmail
+                        </button>
+                        <button type="button" class="btn-secondary btn-sm" id="gmailPurgeBtn" onclick="purgeGmailPromos()" title="Remove promo ads and unconfirmed Gmail imports">
+                            <i class="fas fa-broom"></i> Clean bad imports
+                        </button>
+                        <button class="btn-secondary btn-sm" onclick="loadExpenses(true)" title="Refresh list">
+                            <i class="fas fa-sync"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="gmail-sync-bar" id="gmailSyncBar">
+                    <div class="gmail-sync-info">
+                        <i class="fab fa-google"></i>
+                        <span id="gmailSyncStatusText">Checking Gmail connection…</span>
+                    </div>
+                    <button type="button" class="btn-link-sm" id="gmailConnectLink" onclick="initiateGmailConnect()" hidden>Connect Gmail</button>
+                </div>
+
+                <div class="expense-summary-card" id="expenseSummaryCard">
+                    <div class="expense-summary-main">
+                        <span class="expense-summary-label">Total spent</span>
+                        <span class="expense-summary-total" id="expenseTotalAmount">₹0.00</span>
+                    </div>
+                    <div class="expense-summary-meta">
+                        <span id="expenseTransactionCount">0 transactions</span>
+                        <span class="dot-sep">·</span>
+                        <span id="expensePeriodLabel">Last 30 days</span>
+                    </div>
+                </div>
+
+                <div class="spend-breakdown-panel" id="spendBreakdownPanel">
+                    <button type="button" class="spend-breakdown-toggle" id="spendBreakdownToggle" onclick="toggleSpendBreakdown()">
+                        <span><i class="fas fa-map-marker-alt"></i> Where you spent</span>
+                        <i class="fas fa-chevron-down spend-chevron" id="spendBreakdownChevron"></i>
+                    </button>
+                    <div class="spend-breakdown-body" id="spendBreakdownBody" hidden>
+                        <p class="hint-text">Tap a category to see merchants and bill details.</p>
+                        <div id="spendBreakdownList" class="spend-breakdown-list"></div>
+                    </div>
+                </div>
+
+                <div class="expense-list-header">
+                    <h3>All transactions</h3>
+                </div>
+                <div class="expense-list" id="expenseList">
+                    <p class="empty-state">Loading expenses…</p>
+                </div>
+            </section>
+
+            <!-- Income Section -->
+            <section id="income" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-dollar-sign"></i> Income</h1>
+                    <button class="btn-primary" onclick="showAddIncomeModal()">
+                        <i class="fas fa-plus"></i> Add Income
+                    </button>
+                </div>
+
+                <div class="income-list" id="incomeList">
+                    <!-- Income will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Budget Section -->
+            <section id="budget" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-piggy-bank"></i> Budget Management</h1>
+                    <button class="btn-primary" onclick="showSetBudgetModal()">
+                        <i class="fas fa-plus"></i> Set Budget
+                    </button>
+                </div>
+
+                <div class="budget-status" id="budgetStatus">
+                    <!-- Budget status will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Bills Section -->
+            <section id="bills" class="content-section">
+                <div class="section-header">
+                    <div>
+                        <h1><i class="fas fa-bell"></i> Bill Reminders</h1>
+                        <p>Email alerts at 7, 3, 1, and 0 days before each due date</p>
+                    </div>
+                    <button class="btn-primary" onclick="showAddBillModal()">
+                        <i class="fas fa-plus"></i> Add Bill
+                    </button>
+                </div>
+                <div class="bill-alert-settings card-panel">
+                    <h3><i class="fas fa-envelope"></i> Email alerts</h3>
+                    <label class="toggle-row">
+                        <input type="checkbox" id="billEmailEnabled" checked>
+                        <span>Send automatic reminder emails</span>
+                    </label>
+                    <div class="bill-email-row">
+                        <input type="email" id="billAlertEmail" class="filter-input" placeholder="Alert email (defaults to Google account)">
+                        <button class="btn-secondary" onclick="saveBillNotificationSettings()">Save</button>
+                        <button class="btn-secondary" onclick="runBillRemindersNow()" title="Send due reminders now">
+                            <i class="fas fa-paper-plane"></i> Send now
+                        </button>
+                    </div>
+                    <p id="billEmailStatus" class="hint-text"></p>
+                </div>
+                <div class="bill-list" id="billList">
+                    <p class="empty-state">No bill reminders yet. Add one above or ask the AI assistant.</p>
+                </div>
+            </section>
+
+            <!-- Bank Sync Section -->
+            <section id="bank" class="content-section">
+                <div class="section-header">
+                    <div>
+                        <h1><i class="fas fa-university"></i> Bank Sync (Plaid)</h1>
+                        <p>Link your bank and import transactions as expenses</p>
+                    </div>
+                    <button class="btn-primary" id="plaidLinkBtn" onclick="openPlaidLink()">
+                        <i class="fas fa-link"></i> Connect Bank
+                    </button>
+                </div>
+                <div id="plaidStatus" class="card-panel">
+                    <p class="hint-text">Checking Plaid configuration…</p>
+                </div>
+                <div id="indiaBankNotice" class="card-panel india-bank-notice">
+                    <h3><i class="fas fa-info-circle"></i> Indian banks (HDFC, SBI, ICICI, etc.)</h3>
+                    <p>
+                        <strong>Plaid cannot link Indian bank accounts.</strong> Use the India-specific methods below instead.
+                    </p>
+                </div>
+
+                <!-- Option 1: Account Aggregator -->
+                <div class="card-panel india-sync-card">
+                    <h3><i class="fas fa-landmark"></i> Option 1 — Account Aggregator (India)</h3>
+                    <p class="hint-text">Setu · Finvu · OneMoney — Connect → Consent → Approve → Fetch → Categorize → MongoDB</p>
+                    <div id="aaStatus"><p class="hint-text">Loading AA status…</p></div>
+                    <div class="tax-controls">
+                        <select id="aaProvider" class="filter-input">
+                            <option value="setu">Setu</option>
+                            <option value="finvu">Finvu</option>
+                            <option value="onemoney">OneMoney</option>
+                        </select>
+                        <select id="aaBankSelect" class="filter-input">
+                            <option value="HDFC Bank">HDFC Bank</option>
+                            <option value="SBI">SBI</option>
+                            <option value="ICICI Bank">ICICI Bank</option>
+                            <option value="Axis Bank">Axis Bank</option>
+                            <option value="Kotak Mahindra">Kotak Mahindra</option>
+                            <option value="PNB">PNB</option>
+                        </select>
+                        <button type="button" class="btn-primary" onclick="startAAConsent()">
+                            <i class="fas fa-link"></i> Connect Bank (AA)
+                        </button>
+                    </div>
+                    <div id="aaConnectionsList" class="bank-connections-list"></div>
+                </div>
+
+                <!-- Option 2: Gmail bank transaction emails -->
+                <div class="card-panel india-sync-card">
+                    <h3><i class="fas fa-envelope-open-text"></i> Option 2 — Gmail Bank Transaction Detection</h3>
+                    <p class="hint-text">Reads HDFC / SBI / ICICI debit alerts from Gmail — e.g. <code>Rs. 450 spent on Amazon</code></p>
+                    <button type="button" class="btn-primary" id="gmailBankSyncBtn" onclick="syncGmailBankTransactions()">
+                        <i class="fas fa-envelope-open-text"></i> Scan Bank Emails
+                    </button>
+                    <div id="gmailBankResult" class="sms-preview-list"></div>
+                </div>
+
+                <!-- Option 3: SMS parsing -->
+                <div class="card-panel india-sync-card">
+                    <h3><i class="fas fa-sms"></i> Option 3 — SMS Parsing</h3>
+                    <p class="hint-text">Paste bank SMS alerts (web demo — mobile apps read SMS automatically)</p>
+                    <textarea id="smsInput" class="modal-input tall-textarea" rows="4" placeholder="Rs. 450 spent on Amazon&#10;INR 599 debited from A/C XXXX1234&#10;Rs. 1200 debited from HDFC Bank"></textarea>
+                    <div class="tax-controls">
+                        <button type="button" class="btn-secondary" onclick="previewSMSExpenses()">Preview</button>
+                        <button type="button" class="btn-primary" onclick="saveSMSExpenses()">Save as Expenses</button>
+                    </div>
+                    <div id="smsPreview" class="sms-preview-list"></div>
+                </div>
+                <div id="bankConnectionsList" class="bank-connections-list"></div>
+                <div id="bankSyncPanel" class="card-panel" style="display: none;">
+                    <h3><i class="fas fa-sync"></i> Import transactions</h3>
+                    <div class="tax-controls">
+                        <select id="bankConnectionSelect" class="filter-input"></select>
+                        <input type="date" id="bankSyncStart" class="filter-input">
+                        <input type="date" id="bankSyncEnd" class="filter-input">
+                        <button type="button" class="btn-primary" onclick="syncBankTransactions()">Sync</button>
+                        <button type="button" class="btn-secondary" onclick="syncLast30Days()">Last 30 days</button>
+                        <button type="button" class="btn-secondary" onclick="loadAccountBalances()">Balances</button>
+                    </div>
+                    <p id="bankSyncResult" class="hint-text"></p>
+                    <div id="bankBalancesList" class="bank-balances-list"></div>
+                </div>
+                <p class="hint-text" style="margin-top: 0.75rem;">
+                    Sandbox test: username <code>user_good</code> · password <code>pass_good</code> · any test bank (e.g. First Platypus Bank)
+                </p>
+            </section>
+
+            <!-- Investments Section -->
+            <section id="investments" class="content-section">
+                <div class="section-header">
+                    <div>
+                        <h1><i class="fas fa-chart-bar"></i> Investments & Market Data</h1>
+                        <p>Get real-time stock and mutual fund data powered by Yahoo Finance</p>
+                    </div>
+                    <a href="/stocks/page" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
+                        <i class="fas fa-chart-candlestick"></i> Smart Stock Analyzer
+                    </a>
+                </div>
+
+                <div class="market-widget">
+                    <div class="market-header">
+                        <div>
+                            <h3><i class="fas fa-line-chart"></i> Live Market Pulse</h3>
+                            <p>Powered by Yahoo Finance via LangGraph MCP</p>
+                        </div>
+                        <form class="market-form" data-market-widget="investments">
+                            <input type="text" class="market-symbol-input" placeholder="AAPL, Netflix, INFY.NS" autocomplete="off">
+                            <button type="submit" class="btn-primary">Fetch</button>
+                        </form>
+                    </div>
+                    <div class="market-result">
+                        Enter a ticker symbol to see price, market cap, returns, and more.
+                    </div>
+                </div>
+
+                <div class="investment-tips">
+                    <h3><i class="fas fa-lightbulb"></i> Tips</h3>
+                    <ul>
+                        <li>Use US tickers like <strong>AAPL</strong>, <strong>TSLA</strong>, <strong>GOOGL</strong> for US stocks</li>
+                        <li>Use <strong>.NS</strong> suffix for Indian stocks (e.g., <strong>INFY.NS</strong>, <strong>RELIANCE.NS</strong>)</li>
+                        <li>Ask the AI assistant: "Show me AAPL stock data" or "What's the price of TSLA?"</li>
+                        <li>View returns for 1 day, 1 week, 1 month, 3 months, 6 months, and 1 year</li>
+                        <li>Open <a href="/stocks/page" style="color:var(--primary-color,#58a6ff);">Smart Stock Analyzer</a> for candlestick charts, RSI, MACD, buy/sell signals, and 30-day projections</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Recurring Section -->
+            <section id="recurring" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-sync-alt"></i> Recurring Expenses</h1>
+                </div>
+                <div id="recurringList" class="expense-list">
+                    <p class="empty-state">Loading recurring expenses…</p>
+                </div>
+            </section>
+
+            <!-- Savings Section -->
+            <section id="savings" class="content-section">
+                <div class="section-header">
+                    <div>
+                        <h1><i class="fas fa-bullseye"></i> Savings Goals</h1>
+                        <p>Set a goal name, optional goal number, target amount, and deadline</p>
+                    </div>
+                    <button class="btn-primary" id="addSavingsGoalBtn" onclick="showAddSavingsGoalModal()">
+                        <i class="fas fa-plus"></i> Add Goal
+                    </button>
+                </div>
+                <div id="savingsGoalsList" class="savings-goals-list">
+                    <p class="empty-state">No savings goals yet. Click Add Goal to create one.</p>
+                </div>
+            </section>
+
+            <!-- Debt Section -->
+            <section id="debt" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-credit-card"></i> Debt Overview</h1>
+                </div>
+                <div id="debtList" class="expense-list"></div>
+            </section>
+
+            <!-- Reports Section -->
+            <section id="reports" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-file-alt"></i> Financial Reports</h1>
+                    <button class="btn-primary" onclick="loadFinancialReports(true)">
+                        <i class="fas fa-sync"></i> Generate Report
+                    </button>
+                </div>
+                <div id="reportsOutput" class="report-output">
+                    <p class="empty-state">Click Generate Report or ask the AI assistant.</p>
+                </div>
+            </section>
+
+            <!-- Tax Section -->
+            <section id="taxes" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-calculator"></i> Tax Estimator</h1>
+                </div>
+                <div class="tax-controls">
+                    <select id="taxJurisdiction" class="filter-input">
+                        <option value="IN">India (IN)</option>
+                        <option value="US">United States (US)</option>
+                        <option value="GB">United Kingdom (GB)</option>
+                        <option value="CA">Canada (CA)</option>
+                        <option value="AU">Australia (AU)</option>
+                    </select>
+                    <button class="btn-primary" onclick="loadTaxEstimates(true)">Estimate Taxes</button>
+                </div>
+                <div id="taxOutput" class="report-output">
+                    <p class="empty-state">Select jurisdiction and estimate taxes.</p>
+                </div>
+            </section>
+
+            <!-- Credit Section -->
+            <section id="credit" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-star"></i> Credit Score</h1>
+                </div>
+                <div id="creditOutput" class="report-output">
+                    <p class="empty-state">No credit scores recorded. Use AI chat: "Record my credit score 750".</p>
+                </div>
+            </section>
+
+            <!-- Currency Section -->
+            <section id="currency" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-globe"></i> Multi-Currency</h1>
+                </div>
+                <div class="tax-controls">
+                    <input type="number" id="fxAmount" class="filter-input" placeholder="Amount" step="0.01">
+                    <input type="text" id="fxFrom" class="filter-input" placeholder="From (USD)" value="USD">
+                    <input type="text" id="fxTo" class="filter-input" placeholder="To (INR)" value="INR">
+                    <button class="btn-primary" onclick="runCurrencyConversion()">Convert</button>
+                </div>
+                <div id="currencyOutput" class="report-output"></div>
+            </section>
+
+            <!-- Audit Log Section -->
+            <section id="audit" class="content-section">
+                <div class="section-header">
+                    <div>
+                        <h1><i class="fas fa-shield-alt"></i> Security &amp; Activity Audit</h1>
+                        <p>Full trail of actions, failures, and compliance export</p>
+                    </div>
+                    <div class="audit-header-actions">
+                        <select id="auditPeriodHours" class="filter-input" onchange="loadAuditDashboard()">
+                            <option value="24">Last 24h</option>
+                            <option value="168" selected>Last 7 days</option>
+                            <option value="720">Last 30 days</option>
+                        </select>
+                        <button class="btn-secondary" onclick="exportAuditCsv()">
+                            <i class="fas fa-download"></i> Export CSV
+                        </button>
+                        <button class="btn-secondary" onclick="refreshAuditView()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div id="auditAlerts" class="audit-alerts"></div>
+                <div id="auditStatsGrid" class="audit-stats-grid"></div>
+                <div id="auditTimeline" class="audit-timeline-chart"></div>
+
+                <div class="audit-filters">
+                    <input type="text" id="auditSearch" class="filter-input" placeholder="Search action, IP, tool, error…">
+                    <input type="date" id="auditStartDate" class="filter-input" title="From">
+                    <input type="date" id="auditEndDate" class="filter-input" title="To">
+                    <select id="auditActionFilter" class="filter-input">
+                        <option value="">All actions</option>
+                        <option value="expense_added">Expense added</option>
+                        <option value="expense_updated">Expense updated</option>
+                        <option value="expense_deleted">Expense deleted</option>
+                        <option value="income_added">Income added</option>
+                        <option value="budget_set">Budget set</option>
+                        <option value="tax_estimated">Tax estimated</option>
+                        <option value="mcp_tool_called">Tool invoked</option>
+                        <option value="chat_interaction">AI chat</option>
+                        <option value="document_uploaded">Document uploaded</option>
+                        <option value="session_linked">Google linked</option>
+                        <option value="voice_command">Voice command</option>
+                        <option value="data_exported">Data exported</option>
+                        <option value="login">Login</option>
+                        <option value="failed_login">Failed login</option>
+                    </select>
+                    <select id="auditCategoryFilter" class="filter-input">
+                        <option value="">All categories</option>
+                        <option value="financial">Financial</option>
+                        <option value="security">Security</option>
+                        <option value="auth">Auth</option>
+                        <option value="ai">AI</option>
+                        <option value="system">System</option>
+                    </select>
+                    <select id="auditSeverityFilter" class="filter-input">
+                        <option value="">All severity</option>
+                        <option value="info">Info</option>
+                        <option value="warning">Warning</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                    <select id="auditSuccessFilter" class="filter-input">
+                        <option value="">Success + Failed</option>
+                        <option value="true">Success only</option>
+                        <option value="false">Failed only</option>
+                    </select>
+                    <select id="auditSourceFilter" class="filter-input">
+                        <option value="">All sources</option>
+                        <option value="api">API</option>
+                        <option value="mcp">MCP</option>
+                        <option value="oauth">OAuth</option>
+                        <option value="system">System</option>
+                    </select>
+                    <button class="btn-primary" onclick="resetAuditOffset(); loadAuditLogs();">
+                        <i class="fas fa-filter"></i> Apply
+                    </button>
+                </div>
+                <div id="auditSummary" class="audit-summary"></div>
+                <div id="auditLogList" class="audit-log-list">
+                    <p class="empty-state">Sign in to view your activity log.</p>
+                </div>
+                <div id="auditPagination" class="audit-pagination"></div>
+            </section>
+            
+        </main>
+    </div>
+
+    <div id="authOverlay" class="auth-overlay">
+        <div class="auth-card">
+            <h2><i class="fas fa-lock"></i> Sign in to continue</h2>
+            <p>For privacy and syncing, sign in before using TrackExpensio.</p>
+            <div class="overlay-actions">
+                <button class="btn-primary" onclick="initiateGmailConnect()">
+                    <i class="fas fa-link"></i> Sync with Google
+                </button>
+                <button class="btn-secondary" onclick="refreshSessionStatus()">
+                    <i class="fas fa-rotate"></i> I’ve connected
+                </button>
+            </div>
+            <small>Your data stays in your private MongoDB collection.</small>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- API Key modal removed - using guest sessions now -->
+
+    <!-- Add Income Modal -->
+    <div id="addIncomeModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addIncomeModal')">&times;</span>
+            <h2><i class="fas fa-plus-circle"></i> Add Income</h2>
+            <form id="addIncomeForm" onsubmit="addIncome(event)">
+                <input type="date" id="incomeDate" class="modal-input" required>
+                <input type="number" id="incomeAmount" placeholder="Amount" class="modal-input" required step="0.01">
+                <input type="text" id="incomeSource" placeholder="Source (e.g. Employer)" class="modal-input" required>
+                <select id="incomeCategory" class="modal-input">
+                    <option value="Salary">Salary</option>
+                    <option value="Freelance">Freelance</option>
+                    <option value="Investment">Investment</option>
+                    <option value="Business">Business</option>
+                    <option value="Rental">Rental</option>
+                    <option value="Other">Other</option>
+                </select>
+                <textarea id="incomeNote" placeholder="Note (optional)" class="modal-input"></textarea>
+                <button type="submit" class="btn-primary">Add Income</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Set Budget Modal -->
+    <div id="setBudgetModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('setBudgetModal')">&times;</span>
+            <h2><i class="fas fa-piggy-bank"></i> Set Monthly Budget</h2>
+            <form id="setBudgetForm" onsubmit="submitBudget(event)">
+                <select id="budgetCategory" class="modal-input" required>
+                    <option value="Food">Food</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Rent">Rent</option>
+                    <option value="Health">Health</option>
+                    <option value="Education">Education</option>
+                    <option value="Other">Other</option>
+                </select>
+                <input type="number" id="budgetAmount" placeholder="Monthly amount" class="modal-input" required step="0.01">
+                <button type="submit" class="btn-primary">Save Budget</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Savings Goal Modal -->
+    <div id="addSavingsGoalModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addSavingsGoalModal')">&times;</span>
+            <h2 id="savingsGoalModalTitle"><i class="fas fa-bullseye"></i> Add Savings Goal</h2>
+            <form id="addSavingsGoalForm" onsubmit="submitSavingsGoal(event)">
+                <input type="hidden" id="savingsGoalId" value="">
+                <input type="text" id="savingsGoalName" class="modal-input" placeholder="Goal name (e.g. Monthly Savings)" required>
+                <input type="text" id="savingsGoalNumber" class="modal-input" placeholder="Goal number (optional, e.g. 001)">
+                <input type="number" id="savingsGoalTarget" class="modal-input" placeholder="Target amount (₹)" step="0.01" min="0.01" required>
+                <input type="number" id="savingsGoalCurrent" class="modal-input" placeholder="Already saved (₹)" step="0.01" min="0" value="0">
+                <input type="date" id="savingsGoalDate" class="modal-input" required>
+                <button type="submit" class="btn-primary" id="savingsGoalSubmitBtn">Save Goal</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Bill Modal -->
+    <div id="addBillModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addBillModal')">&times;</span>
+            <h2><i class="fas fa-bell"></i> Add Bill Reminder</h2>
+            <form id="addBillForm" onsubmit="submitBillReminder(event)">
+                <input type="text" id="billName" class="modal-input" placeholder="Bill name (e.g. Rent)" required>
+                <input type="number" id="billAmount" class="modal-input" placeholder="Amount" step="0.01" required>
+                <input type="date" id="billDueDate" class="modal-input" required>
+                <select id="billFrequency" class="modal-input">
+                    <option value="monthly">Monthly</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="yearly">Yearly</option>
+                    <option value="once">Once</option>
+                </select>
+                <button type="submit" class="btn-primary">Save Reminder</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- AA Consent Modal -->
+    <div id="aaConsentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('aaConsentModal')">&times;</span>
+            <h2><i class="fas fa-shield-alt"></i> Account Aggregator Consent</h2>
+            <p>TrackExpensio requests read-only access to your bank transactions via India's AA framework.</p>
+            <div class="aa-consent-details">
+                <div><span>Provider</span><strong id="aaConsentProvider">setu</strong></div>
+                <div><span>Bank</span><strong id="aaConsentBank">HDFC Bank</strong></div>
+            </div>
+            <p class="hint-text">You approve once — we fetch transactions, categorize them, and store privately in MongoDB.</p>
+            <div class="overlay-actions" style="flex-direction: row; gap: 0.75rem;">
+                <button type="button" class="btn-primary" onclick="approveAAConsent()">Approve &amp; Link</button>
+                <button type="button" class="btn-secondary" onclick="closeModal('aaConsentModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div id="addExpenseModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addExpenseModal')">&times;</span>
+            <h2><i class="fas fa-plus-circle"></i> Add Expense</h2>
+            <form id="addExpenseForm" onsubmit="addExpense(event)">
+                <input type="date" id="expenseDate" class="modal-input" required>
+                <input type="number" id="expenseAmount" placeholder="Amount" class="modal-input" required>
+                <select id="expenseCategory" class="modal-input" required>
+                    <option value="Food">Food</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Rent">Rent</option>
+                    <option value="Health">Health</option>
+                    <option value="Education">Education</option>
+                    <option value="Other">Other</option>
+                </select>
+                <input type="text" id="expenseMerchant" placeholder="Merchant" class="modal-input">
+                <textarea id="expenseNote" placeholder="Note (optional)" class="modal-input"></textarea>
+                <button type="submit" class="btn-primary">Add Expense</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+    <script src="/static/js/expense_tracker.js?v=20250607a"></script>
+    <script src="/static/js/plaid_link.js?v=20250606"></script>
+    <script src="/static/js/india_bank_sync.js?v=20250606b"></script>
+    <script src="/static/js/voice_recording.js"></script>
+</body>
+</html>
+

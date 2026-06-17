@@ -3,6 +3,7 @@ let sessionId = localStorage.getItem('sessionId') || '';
 let apiKey = localStorage.getItem('apiKey') || ''; // For registered users
 let currentSection = 'dashboard';
 let isGoogleLinked = localStorage.getItem('googleLinked') === 'true';
+let guestMode = localStorage.getItem('guestMode') === 'true';
 let chatHistory = [];
 let sessionLinked = false;
 const BASE_CURRENCY_KEY = 'baseCurrency';
@@ -422,7 +423,15 @@ function getAuthPayload() {
 }
 
 function isUserAuthenticated() {
-    return !!(apiKey || sessionLinked || (userProfile && userProfile.email));
+    return !!(apiKey || sessionLinked || guestMode || (userProfile && userProfile.email));
+}
+
+function continueAsGuest() {
+    guestMode = true;
+    localStorage.setItem('guestMode', 'true');
+    toggleAuthOverlay(false);
+    showMessage('Continuing as guest. Data is saved to a temporary session — sign in with Google anytime to keep it permanently.', 'info');
+    if (typeof loadDashboardData === 'function') loadDashboardData();
 }
 
 async function restPost(path, payload = {}) {
@@ -3097,6 +3106,7 @@ Object.assign(window, {
     submitBudget,
     initiateGmailConnect,
     refreshSessionStatus,
+    continueAsGuest,
     sendChatMessage,
     sendExample,
     setExpensePeriod,

@@ -1534,6 +1534,24 @@ a.sidebar-btn.sidebar-link {
     border-color: var(--primary);
 }
 
+.btn-text-link {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    padding: 0.25rem;
+    transition: color 0.2s;
+}
+
+.btn-text-link:hover {
+    color: var(--primary);
+}
+
 /* Buttons */
 .btn-primary {
     background: var(--primary);
@@ -2722,4 +2740,3 @@ a.sidebar-btn.sidebar-link {
         min-width: auto;
     }
 }
-

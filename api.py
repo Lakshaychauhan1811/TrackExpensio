@@ -200,10 +200,16 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
-def _google_flow(request: Request | None = None) -> Flow:
+def _google_flow(request: Request | None = None, code_verifier: str | None = None) -> Flow:
     """
     Build a Google OAuth flow. If GOOGLE_REDIRECT_URI is not set, derive it from the incoming request
     (works for localhost / 127.0.0.1 during local dev).
+
+    PKCE note: google-auth-oauthlib generates a fresh `code_verifier` on every new Flow
+    instance. Since /auth/google/login and /auth/google/callback are separate HTTP
+    requests (and therefore separate Flow objects), the verifier created during login
+    must be persisted and passed back in here during the callback, or token exchange
+    fails with "Missing code verifier".
     """
     redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
     if not redirect_uri and request is not None:
@@ -232,6 +238,7 @@ def _google_flow(request: Request | None = None) -> Flow:
             "https://www.googleapis.com/auth/gmail.readonly",
             "openid",
         ],
+        code_verifier=code_verifier,
     )
     flow.redirect_uri = redirect_uri
     return flow
@@ -1531,7 +1538,13 @@ async def google_login(request: Request, session_id: str = None, api_key: str = 
         prompt="consent",
     )
     await mongo_manager.save_oauth_state(
-        state, {"api_key": api_key, "session_id": session_id, "user_id": user_id}
+        state,
+        {
+            "api_key": api_key,
+            "session_id": session_id,
+            "user_id": user_id,
+            "code_verifier": flow.code_verifier,
+        },
     )
     return RedirectResponse(authorization_url)
 
@@ -1603,7 +1616,7 @@ async def google_callback(request: Request, code: str = None, state: str = None,
         raise HTTPException(status_code=400, detail="Invalid or expired state. Please try again.")
     
     try:
-        flow = _google_flow(request)
+        flow = _google_flow(request, code_verifier=stored.get("code_verifier"))
         flow.fetch_token(code=code)
         credentials = flow.credentials
         service = build("oauth2", "v2", credentials=credentials)
@@ -1920,19 +1933,19 @@ async def stock_quick(ticker: str, request: Request):
 @app.get("/stocks/page", response_class=HTMLResponse)
 async def stock_page(request: Request):
     """Smart Stock Analyzer UI."""
-    return templates.TemplateResponse(request=request, name="stock_analysis.html")
+    return templates.TemplateResponse("stock_analysis.html", {"request": request})
 
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Serve the main chatbot UI"""
-    return templates.TemplateResponse(request, "expense_tracker.html", {})
+    return templates.TemplateResponse("expense_tracker.html", {"request": request})
 
 
 @app.get("/chat", response_class=HTMLResponse)
 async def chat(request: Request):
     """Alias for home page"""
-    return templates.TemplateResponse(request, "expense_tracker.html", {})
+    return templates.TemplateResponse("expense_tracker.html", {"request": request})
 
 
 if __name__ == "__main__":
@@ -1944,4 +1957,3 @@ if __name__ == "__main__":
     print(f"💬 Chatbot available at: http://{host}:{port}/chat")
     print(f"\n✅ Server running on {host}:{port}\n")
     uvicorn.run(app, host=host, port=port)
-

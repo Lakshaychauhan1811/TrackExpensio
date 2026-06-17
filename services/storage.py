@@ -1,3 +1,4 @@
+import asyncio
 import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
@@ -10,21 +11,46 @@ class MongoManager:
     Centralized MongoDB helper used for storing user-specific assets such as
     speech transcripts, parsed documents, and OAuth tokens. Every document
     carries the `user_id` so isolation is guaranteed.
+
+    The Motor client is bound to the asyncio event loop active when it was
+    created. On some hosts (e.g. Render free tier) the worker's event loop
+    can be recycled between requests, which leaves the old client pointing
+    at a closed loop ("RuntimeError: Event loop is closed"). To avoid that,
+    we lazily recreate the client whenever the running loop differs from
+    the one the client was built on.
     """
 
     def __init__(self) -> None:
-        uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-        db_name = os.getenv("MONGODB_DB", "ai_expense_tracker")
-        self.client = AsyncIOMotorClient(uri)
-        self.db = self.client[db_name]
+        self._uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+        self._db_name = os.getenv("MONGODB_DB", "ai_expense_tracker")
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._connect()
+
+    def _connect(self) -> None:
+        self.client = AsyncIOMotorClient(self._uri)
+        self.db = self.client[self._db_name]
         self.voice_collection = self.db["voice_expenses"]
         self.doc_collection = self.db["document_expenses"]
         self.google_collection = self.db["google_profiles"]
         self.gmail_sync_collection = self.db["gmail_synced_messages"]
         self.oauth_states_collection = self.db["oauth_states"]
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self._loop = None
+
+    def _ensure_loop(self) -> None:
+        """Recreate the Motor client if the event loop has changed or closed."""
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        if self._loop is None or self._loop is not current_loop or self._loop.is_closed():
+            self._connect()
 
     async def ensure_indexes(self) -> None:
         """Create indexes, handle connection errors gracefully"""
+        self._ensure_loop()
         try:
             await self.voice_collection.create_index([("user_id", 1), ("created_at", -1)])
             await self.doc_collection.create_index([("user_id", 1), ("created_at", -1)])
@@ -45,6 +71,7 @@ class MongoManager:
             raise ConnectionError(f"MongoDB connection failed: {str(e)}") from e
 
     async def save_voice_expense(self, user_id: str, payload: Dict[str, Any]) -> None:
+        self._ensure_loop()
         await self.voice_collection.insert_one(
             {
                 "user_id": user_id,
@@ -54,6 +81,7 @@ class MongoManager:
         )
 
     async def save_document_expense(self, user_id: str, payload: Dict[str, Any]) -> None:
+        self._ensure_loop()
         await self.doc_collection.insert_one(
             {
                 "user_id": user_id,
@@ -65,6 +93,7 @@ class MongoManager:
     async def upsert_google_profile(
         self, user_id: str, profile: Dict[str, Any], credentials: Dict[str, Any]
     ) -> None:
+        self._ensure_loop()
         await self.google_collection.update_one(
             {"user_id": user_id},
             {
@@ -79,6 +108,7 @@ class MongoManager:
         )
 
     async def save_oauth_state(self, state: str, payload: Dict[str, Any], ttl_minutes: int = 15) -> None:
+        self._ensure_loop()
         now = datetime.utcnow()
         await self.oauth_states_collection.update_one(
             {"state": state},
@@ -94,6 +124,7 @@ class MongoManager:
         )
 
     async def pop_oauth_state(self, state: str) -> Optional[Dict[str, Any]]:
+        self._ensure_loop()
         doc = await self.oauth_states_collection.find_one_and_delete({"state": state})
         if doc:
             return doc.get("payload")
@@ -102,6 +133,7 @@ class MongoManager:
     async def mark_gmail_message_synced(
         self, user_id: str, message_id: str, expense_id: str, payload: Dict[str, Any]
     ) -> None:
+        self._ensure_loop()
         await self.gmail_sync_collection.update_one(
             {"user_id": user_id, "message_id": message_id},
             {
@@ -116,4 +148,3 @@ class MongoManager:
             },
             upsert=True,
         )
-

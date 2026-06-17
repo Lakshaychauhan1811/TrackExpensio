@@ -3,7 +3,6 @@ let sessionId = localStorage.getItem('sessionId') || '';
 let apiKey = localStorage.getItem('apiKey') || ''; // For registered users
 let currentSection = 'dashboard';
 let isGoogleLinked = localStorage.getItem('googleLinked') === 'true';
-let guestMode = localStorage.getItem('guestMode') === 'true';
 let chatHistory = [];
 let sessionLinked = false;
 const BASE_CURRENCY_KEY = 'baseCurrency';
@@ -256,6 +255,14 @@ function setupDocumentDropzone() {
         const file = e.dataTransfer?.files?.[0];
         if (file) uploadDocument(file);
     });
+
+    // Clicking the label opens the native file picker (browser default).
+    // This listener handles the case where the user picks a file that way,
+    // since only drag/drop was wired to uploadDocument() before.
+    input.addEventListener('change', () => {
+        const file = input.files?.[0];
+        if (file) uploadDocument(file);
+    });
 }
 
 async function uploadDocument(file) {
@@ -423,15 +430,7 @@ function getAuthPayload() {
 }
 
 function isUserAuthenticated() {
-    return !!(apiKey || sessionLinked || guestMode || (userProfile && userProfile.email));
-}
-
-function continueAsGuest() {
-    guestMode = true;
-    localStorage.setItem('guestMode', 'true');
-    toggleAuthOverlay(false);
-    showMessage('Continuing as guest. Data is saved to a temporary session — sign in with Google anytime to keep it permanently.', 'info');
-    if (typeof loadDashboardData === 'function') loadDashboardData();
+    return !!(apiKey || sessionLinked || (userProfile && userProfile.email));
 }
 
 async function restPost(path, payload = {}) {
@@ -3106,7 +3105,6 @@ Object.assign(window, {
     submitBudget,
     initiateGmailConnect,
     refreshSessionStatus,
-    continueAsGuest,
     sendChatMessage,
     sendExample,
     setExpensePeriod,

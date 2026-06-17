@@ -1933,7 +1933,7 @@ async def stock_quick(ticker: str, request: Request):
 @app.get("/stocks/page", response_class=HTMLResponse)
 async def stock_page(request: Request):
     """Smart Stock Analyzer UI."""
-    return templates.TemplateResponse("stock_analysis.html", {"request": request})
+    return templates.TemplateResponse(request, "stock_analysis.html", {})
 
 
 @app.get("/", response_class=HTMLResponse)

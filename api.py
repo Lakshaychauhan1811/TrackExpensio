@@ -1939,7 +1939,7 @@ async def stock_page(request: Request):
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Serve the main chatbot UI"""
-   return templates.TemplateResponse(request, "expense_tracker.html", {})
+    return templates.TemplateResponse(request, "expense_tracker.html", {})
 
 
 @app.get("/chat", response_class=HTMLResponse)

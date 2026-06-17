@@ -1534,24 +1534,6 @@ a.sidebar-btn.sidebar-link {
     border-color: var(--primary);
 }
 
-.btn-text-link {
-    display: block;
-    width: 100%;
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    text-decoration: underline;
-    cursor: pointer;
-    margin-bottom: 1rem;
-    padding: 0.25rem;
-    transition: color 0.2s;
-}
-
-.btn-text-link:hover {
-    color: var(--primary);
-}
-
 /* Buttons */
 .btn-primary {
     background: var(--primary);
@@ -2714,13 +2696,48 @@ a.sidebar-btn.sidebar-link {
         animation-duration: 45s;
     }
     
+    /* Sidebar becomes a horizontally scrollable bar on mobile instead of a
+       tall vertical stack of 14+ buttons pushing the dashboard down. */
     .sidebar {
         width: 100%;
         height: auto;
         position: relative;
         top: 0;
+        padding: 0.75rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
     }
-    
+
+    .sidebar-section {
+        display: inline-flex;
+        gap: 0.5rem;
+        margin-bottom: 0;
+        margin-right: 1rem;
+        vertical-align: top;
+    }
+
+    .sidebar-section h3 {
+        display: none;
+    }
+
+    .sidebar-btn,
+    a.sidebar-btn.sidebar-link {
+        width: auto;
+        flex-shrink: 0;
+        white-space: nowrap;
+        margin-bottom: 0;
+        padding: 0.6rem 0.9rem;
+        font-size: 0.85rem;
+    }
+
+    .sidebar-btn:hover {
+        transform: none;
+    }
+
     .stats-grid {
         grid-template-columns: 1fr;
     }
@@ -2738,5 +2755,17 @@ a.sidebar-btn.sidebar-link {
         right: 1rem;
         left: 1rem;
         min-width: auto;
+    }
+
+    /* Auth overlay card: keep it from overflowing narrow viewports */
+    .auth-card {
+        max-width: 92vw;
+        padding: 1.5rem;
+    }
+
+    /* Dropdowns/menus that assume desktop width should not overflow */
+    .user-profile-dropdown {
+        min-width: 240px;
+        right: -0.5rem;
     }
 }

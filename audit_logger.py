@@ -5,6 +5,7 @@ Enterprise-style activity trail: severity, categories, change tracking,
 security alerts, analytics dashboard, and export.
 """
 
+import asyncio
 import csv
 import io
 import os
@@ -118,14 +119,38 @@ def _meta_for_action(action: AuditAction, success: bool) -> Tuple[str, str, str]
 
 
 class AuditLogger:
-    """Centralized audit logging system"""
+    """Centralized audit logging system.
+
+    Self-heals against Render's event-loop recycling the same way
+    storage.py / database.py do — see those files for the full rationale.
+    """
 
     def __init__(self):
-        uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-        db_name = os.getenv("MONGODB_DB", "ai_expense_tracker")
-        self.client = AsyncIOMotorClient(uri)
-        self.db = self.client[db_name]
-        self.audit_logs = self.db["audit_logs"]
+        self._uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+        self._db_name = os.getenv("MONGODB_DB", "ai_expense_tracker")
+        self._loop = None
+        self._connect()
+
+    def _connect(self) -> None:
+        self.client = AsyncIOMotorClient(self._uri)
+        self.db = self.client[self._db_name]
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self._loop = None
+
+    def _ensure_loop(self) -> None:
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        if self._loop is None or self._loop is not current_loop or self._loop.is_closed():
+            self._connect()
+
+    @property
+    def audit_logs(self):
+        self._ensure_loop()
+        return self.db["audit_logs"]
 
     async def _ensure_indexes(self):
         await self.audit_logs.create_index([("user_id", 1), ("timestamp", -1)])

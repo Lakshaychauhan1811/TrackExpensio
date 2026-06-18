@@ -5,6 +5,7 @@ Handles currency conversions with proper timing, historical rates,
 and rate caching for accurate financial calculations.
 """
 
+import asyncio
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
@@ -13,15 +14,39 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 
 class FXRateManager:
-    """Manages FX rates with historical data and timing support"""
-    
+    """Manages FX rates with historical data and timing support.
+
+    Self-heals against Render's event-loop recycling the same way
+    storage.py / database.py do — see those files for the full rationale.
+    """
+
     def __init__(self):
-        uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-        db_name = os.getenv("MONGODB_DB", "ai_expense_tracker")
-        self.client = AsyncIOMotorClient(uri)
-        self.db = self.client[db_name]
-        self.fx_rates = self.db["fx_rates"]
+        self._uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+        self._db_name = os.getenv("MONGODB_DB", "ai_expense_tracker")
+        self._loop = None
+        self._connect()
         # Indexes will be created on startup via lifespan handler
+
+    def _connect(self) -> None:
+        self.client = AsyncIOMotorClient(self._uri)
+        self.db = self.client[self._db_name]
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self._loop = None
+
+    def _ensure_loop(self) -> None:
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        if self._loop is None or self._loop is not current_loop or self._loop.is_closed():
+            self._connect()
+
+    @property
+    def fx_rates(self):
+        self._ensure_loop()
+        return self.db["fx_rates"]
     
     async def _ensure_indexes(self):
         """Create indexes for FX rate queries"""

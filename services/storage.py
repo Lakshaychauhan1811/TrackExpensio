@@ -29,11 +29,6 @@ class MongoManager:
     def _connect(self) -> None:
         self.client = AsyncIOMotorClient(self._uri)
         self.db = self.client[self._db_name]
-        self.voice_collection = self.db["voice_expenses"]
-        self.doc_collection = self.db["document_expenses"]
-        self.google_collection = self.db["google_profiles"]
-        self.gmail_sync_collection = self.db["gmail_synced_messages"]
-        self.oauth_states_collection = self.db["oauth_states"]
         try:
             self._loop = asyncio.get_running_loop()
         except RuntimeError:
@@ -47,6 +42,41 @@ class MongoManager:
             return
         if self._loop is None or self._loop is not current_loop or self._loop.is_closed():
             self._connect()
+
+    # ------------------------------------------------------------------
+    # Collections are exposed as properties (not plain attributes) so that
+    # ANY access — whether from MongoManager's own methods or from external
+    # callers like api.py reaching in as `mongo_manager.google_collection`
+    # — re-checks the event loop first. Previously only MongoManager's own
+    # methods called _ensure_loop(), so direct external access could still
+    # use a stale client bound to a closed loop ("RuntimeError: Event loop
+    # is closed"), exactly as seen when api.py's get_user_profile() read
+    # mongo_manager.google_collection directly.
+    # ------------------------------------------------------------------
+    @property
+    def voice_collection(self):
+        self._ensure_loop()
+        return self.db["voice_expenses"]
+
+    @property
+    def doc_collection(self):
+        self._ensure_loop()
+        return self.db["document_expenses"]
+
+    @property
+    def google_collection(self):
+        self._ensure_loop()
+        return self.db["google_profiles"]
+
+    @property
+    def gmail_sync_collection(self):
+        self._ensure_loop()
+        return self.db["gmail_synced_messages"]
+
+    @property
+    def oauth_states_collection(self):
+        self._ensure_loop()
+        return self.db["oauth_states"]
 
     async def ensure_indexes(self) -> None:
         """Create indexes, handle connection errors gracefully"""

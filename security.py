@@ -10,6 +10,7 @@ Implements security best practices including:
 - Secure session management
 """
 
+import asyncio
 import os
 import secrets
 import hashlib
@@ -27,17 +28,49 @@ except ImportError:
 
 
 class SecurityManager:
-    """Enhanced security and privacy management"""
-    
+    """Enhanced security and privacy management.
+
+    Self-heals against Render's event-loop recycling the same way
+    storage.py / database.py do — see those files for the full rationale.
+    """
+
     def __init__(self):
-        uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-        db_name = os.getenv("MONGODB_DB", "ai_expense_tracker")
-        self.client = AsyncIOMotorClient(uri)
-        self.db = self.client[db_name]
-        self.security_logs = self.db["security_logs"]
-        self.blocked_ips = self.db["blocked_ips"]
-        self.rate_limits = self.db["rate_limits"]
+        self._uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+        self._db_name = os.getenv("MONGODB_DB", "ai_expense_tracker")
+        self._loop = None
+        self._connect()
         # Indexes will be created on startup via lifespan handler
+
+    def _connect(self) -> None:
+        self.client = AsyncIOMotorClient(self._uri)
+        self.db = self.client[self._db_name]
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self._loop = None
+
+    def _ensure_loop(self) -> None:
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        if self._loop is None or self._loop is not current_loop or self._loop.is_closed():
+            self._connect()
+
+    @property
+    def security_logs(self):
+        self._ensure_loop()
+        return self.db["security_logs"]
+
+    @property
+    def blocked_ips(self):
+        self._ensure_loop()
+        return self.db["blocked_ips"]
+
+    @property
+    def rate_limits(self):
+        self._ensure_loop()
+        return self.db["rate_limits"]
     
     async def _ensure_indexes(self):
         """Create indexes for security collections"""

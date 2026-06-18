@@ -1,3 +1,4 @@
+import asyncio
 import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -40,32 +41,135 @@ class Database:
     MongoDB implementation of the storage layer. Each logical resource has its
     own collection and every document is partitioned by `user_id`, ensuring
     user isolation.
+
+    `db` is instantiated once as a module-level singleton (see main.py). The
+    underlying Motor client is bound to whichever asyncio event loop is
+    running at creation time. On Render (and similar hosts) the worker's
+    event loop can be recycled between requests, which leaves the original
+    client pointing at a closed loop and every subsequent query raises
+    "RuntimeError: Event loop is closed". To self-heal, every collection is
+    exposed as a property that checks the current loop and transparently
+    reconnects if it differs from (or is closed relative to) the loop the
+    client was built on — so none of the methods below need to change.
     """
 
     def __init__(self) -> None:
-        uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-        db_name = os.getenv("MONGODB_DB", "ai_expense_tracker")
-        self.client = AsyncIOMotorClient(uri)
-        self.db = self.client[db_name]
-        self.expenses = self.db["expenses"]
-        self.income = self.db["income"]
-        self.budgets = self.db["budgets"]
-        self.recurring = self.db["recurring_expenses"]
-        self.recurring_log = self.db["recurring_log"]
-        self.savings = self.db["savings_goals"]
-        self.debts = self.db["debts"]
-        self.debt_payments = self.db["debt_payments"]
-        self.investments = self.db["investments"]
-        self.bills = self.db["bill_reminders"]
-        self.settings = self.db["user_settings"]
-        self.roles = self.db["roles"]
-        self.access = self.db["shared_access"]
-        self.bank_connections = self.db["bank_connections"]
-        self.aa_connections = self.db["aa_connections"]
-        self.bank_sync = self.db["bank_sync_log"]
-        self.audit_logs = self.db["audit_logs"]
-        self.fx_rates = self.db["fx_rates"]
-        self.tax_settings = self.db["tax_settings"]
+        self._uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+        self._db_name = os.getenv("MONGODB_DB", "ai_expense_tracker")
+        self._loop = None
+        self._connect()
+
+    def _connect(self) -> None:
+        self.client = AsyncIOMotorClient(self._uri)
+        self.db = self.client[self._db_name]
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self._loop = None
+
+    def _ensure_loop(self) -> None:
+        """Recreate the Motor client if the event loop has changed or closed."""
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        if self._loop is None or self._loop is not current_loop or self._loop.is_closed():
+            self._connect()
+
+    @property
+    def expenses(self):
+        self._ensure_loop()
+        return self.db["expenses"]
+
+    @property
+    def income(self):
+        self._ensure_loop()
+        return self.db["income"]
+
+    @property
+    def budgets(self):
+        self._ensure_loop()
+        return self.db["budgets"]
+
+    @property
+    def recurring(self):
+        self._ensure_loop()
+        return self.db["recurring_expenses"]
+
+    @property
+    def recurring_log(self):
+        self._ensure_loop()
+        return self.db["recurring_log"]
+
+    @property
+    def savings(self):
+        self._ensure_loop()
+        return self.db["savings_goals"]
+
+    @property
+    def debts(self):
+        self._ensure_loop()
+        return self.db["debts"]
+
+    @property
+    def debt_payments(self):
+        self._ensure_loop()
+        return self.db["debt_payments"]
+
+    @property
+    def investments(self):
+        self._ensure_loop()
+        return self.db["investments"]
+
+    @property
+    def bills(self):
+        self._ensure_loop()
+        return self.db["bill_reminders"]
+
+    @property
+    def settings(self):
+        self._ensure_loop()
+        return self.db["user_settings"]
+
+    @property
+    def roles(self):
+        self._ensure_loop()
+        return self.db["roles"]
+
+    @property
+    def access(self):
+        self._ensure_loop()
+        return self.db["shared_access"]
+
+    @property
+    def bank_connections(self):
+        self._ensure_loop()
+        return self.db["bank_connections"]
+
+    @property
+    def aa_connections(self):
+        self._ensure_loop()
+        return self.db["aa_connections"]
+
+    @property
+    def bank_sync(self):
+        self._ensure_loop()
+        return self.db["bank_sync_log"]
+
+    @property
+    def audit_logs(self):
+        self._ensure_loop()
+        return self.db["audit_logs"]
+
+    @property
+    def fx_rates(self):
+        self._ensure_loop()
+        return self.db["fx_rates"]
+
+    @property
+    def tax_settings(self):
+        self._ensure_loop()
+        return self.db["tax_settings"]
 
     # -------------------- Expense --------------------
     async def add_expense(
@@ -804,4 +908,3 @@ class Database:
                 "$inc": {"synced_count": count},
             },
         )
-

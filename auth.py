@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import os
 import secrets
@@ -10,16 +11,44 @@ from security import security_manager
 
 
 class UserAuth:
-    """User authentication and API key management"""
+    """User authentication and API key management.
+
+    Self-heals against Render's event-loop recycling the same way
+    storage.py / database.py do — see those files for the full rationale.
+    """
 
     def __init__(self):
-        uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-        db_name = os.getenv("MONGODB_DB", "ai_expense_tracker")
-        self.client = AsyncIOMotorClient(uri)
-        self.db = self.client[db_name]
-        self.users = self.db["users"]
-        self.api_keys = self.db["api_keys"]
+        self._uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+        self._db_name = os.getenv("MONGODB_DB", "ai_expense_tracker")
+        self._loop = None
+        self._connect()
         self.session_manager = SessionManager()
+
+    def _connect(self) -> None:
+        self.client = AsyncIOMotorClient(self._uri)
+        self.db = self.client[self._db_name]
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self._loop = None
+
+    def _ensure_loop(self) -> None:
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        if self._loop is None or self._loop is not current_loop or self._loop.is_closed():
+            self._connect()
+
+    @property
+    def users(self):
+        self._ensure_loop()
+        return self.db["users"]
+
+    @property
+    def api_keys(self):
+        self._ensure_loop()
+        return self.db["api_keys"]
 
     def _hash_password(self, password: str) -> str:
         """Hash password with bcrypt (via security_manager)."""

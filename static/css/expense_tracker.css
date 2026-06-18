@@ -2768,4 +2768,63 @@ a.sidebar-btn.sidebar-link {
         min-width: 240px;
         right: -0.5rem;
     }
+
+    /* ---- Mobile spacing tightening ---- */
+    /* Desktop sections use generous margins (2-3rem) that stack up badly
+       in a single mobile column. Compress them. */
+    .quick-actions {
+        margin-bottom: 1.5rem;
+    }
+
+    .secure-sync-card {
+        margin-top: 1rem;
+        padding: 1.25rem;
+    }
+
+    .features-showcase {
+        margin-top: 1.5rem;
+    }
+
+    .stats-grid {
+        margin-bottom: 1.25rem;
+    }
+
+    .model-hero {
+        margin-bottom: 1.25rem;
+        padding: 1.25rem;
+        gap: 1rem;
+    }
+
+    /* The glowing orb is purely decorative — on narrow screens it just
+       pushes real content down. Shrink it instead of removing entirely
+       so the visual identity stays, but reclaim most of the space. */
+    .hero-visual {
+        min-height: 0;
+        margin-top: 0.5rem;
+    }
+
+    .hero-orb {
+        width: 70px;
+        height: 70px;
+    }
+
+    /* Upload drop-zone padding was tuned for a wide desktop card */
+    .file-drop.tall {
+        padding: 1.5rem 1rem;
+    }
+
+    /* Chat view used a hardcoded desktop offset; let it size to the
+       mobile viewport instead so it doesn't run off-screen or leave
+       a gap depending on browser chrome height. */
+    .chat-container {
+        height: calc(100vh - 140px);
+    }
+
+    .empty-state {
+        padding: 1.5rem;
+    }
+
+    .section-header {
+        margin-bottom: 1.25rem;
+    }
 }

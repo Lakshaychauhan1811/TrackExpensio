@@ -109,6 +109,20 @@
   .news-snippet { font-size: 0.82rem; color: var(--muted); margin-top: 4px; line-height: 1.4; }
   .prog-bar { background: var(--bg3); border-radius: 99px; height: 8px; overflow: hidden; margin-top: 6px; }
   .prog-fill { height: 100%; border-radius: 99px; transition: width 0.8s ease; }
+
+  @media(max-width:600px) {
+    /* The chart was forced to a fixed 820px height tuned for desktop —
+       on a phone that's far taller than useful and creates a huge
+       empty block, especially before data has loaded. */
+    #chart { min-height: 380px; }
+
+    .hero { padding: 16px; gap: 16px; }
+    .price-block { margin-left: 0; text-align: left; }
+    .signal-card { min-width: 0; width: 100%; padding: 12px 16px; }
+    .container { padding: 14px; }
+    .search-bar { padding: 16px; }
+    .chart-card, .card { padding: 14px; }
+  }
 </style>
 </head>
 <body>

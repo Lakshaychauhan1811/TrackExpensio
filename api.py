@@ -1912,7 +1912,10 @@ async def stock_analyze(ticker: str, request: Request):
     await _enforce_rate_limit_and_ip(request, identifier)
     result = await asyncio.to_thread(analyze_stock, ticker)
     if "error" in result:
-        return JSONResponse(status_code=404, content=result)
+        # Yahoo rate-limiting isn't a "not found" — use 429 so it's not
+        # mistaken for a routing/ticker bug in logs or by the frontend.
+        status = 429 if result.get("rate_limited") else 404
+        return JSONResponse(status_code=status, content=result)
     return result
 
 
@@ -1923,7 +1926,8 @@ async def stock_quick(ticker: str, request: Request):
     await _enforce_rate_limit_and_ip(request, identifier)
     result = await asyncio.to_thread(analyze_stock, ticker)
     if "error" in result:
-        return JSONResponse(status_code=404, content=result)
+        status = 429 if result.get("rate_limited") else 404
+        return JSONResponse(status_code=status, content=result)
     result = dict(result)
     result.pop("chart_json", None)
     result.pop("news", None)

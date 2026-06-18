@@ -10,6 +10,8 @@ Install: pip install yfinance plotly pandas numpy scikit-learn requests
 from __future__ import annotations
 
 import os
+import time
+import threading
 from datetime import datetime, timedelta
 
 import numpy as np
@@ -17,6 +19,71 @@ import plotly.graph_objects as go
 import requests
 import yfinance as yf
 from plotly.subplots import make_subplots
+
+
+# ---------------------------------------------------------------------------
+# Yahoo Finance rate-limit mitigation
+#
+# yfinance scrapes Yahoo's unofficial endpoints (no API key). Yahoo
+# aggressively rate-limits requests it flags as automated, and shared hosts
+# (Render, Heroku, etc.) often share IP ranges that are already throttled.
+#
+# NOTE: we deliberately do NOT pass a custom requests.Session into
+# yf.Ticker() here. Recent yfinance versions (0.2.5x+) moved to curl_cffi
+# internally and will raise YFDataException for a plain requests.Session —
+# "Yahoo API requires curl_cffi session not <type>". Since requirements.txt
+# pins yfinance>=0.2.50 with no upper bound, the exact installed version is
+# unpredictable, so a custom session is a real, version-fragile risk here.
+# What we control safely instead:
+#   1. Retry-with-backoff so a transient 429 self-heals
+#   2. A short-lived in-memory cache so repeated/concurrent lookups for the
+#      same ticker don't re-hit Yahoo at all
+#   3. A clear, honest error when Yahoo really is blocking us, instead of a
+#      bare 404 that looks like a routing bug
+# ---------------------------------------------------------------------------
+
+_CACHE_TTL_SECONDS = 60
+_cache_lock = threading.Lock()
+_analysis_cache: dict[str, tuple[float, dict]] = {}
+
+
+def _cache_get(key: str):
+    with _cache_lock:
+        entry = _analysis_cache.get(key)
+        if not entry:
+            return None
+        ts, value = entry
+        if time.time() - ts > _CACHE_TTL_SECONDS:
+            _analysis_cache.pop(key, None)
+            return None
+        return value
+
+
+def _cache_set(key: str, value: dict) -> None:
+    with _cache_lock:
+        _analysis_cache[key] = (time.time(), value)
+
+
+def _is_rate_limit_error(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return "429" in text or "too many requests" in text or "rate limit" in text
+
+
+def _with_retry(fn, *, attempts: int = 3, base_delay: float = 1.5):
+    """Call fn() with exponential backoff on Yahoo rate-limit errors only.
+    Other errors (bad ticker, network issues unrelated to 429) raise
+    immediately — retrying those would just waste time before failing.
+    """
+    last_exc = None
+    for i in range(attempts):
+        try:
+            return fn()
+        except Exception as exc:  # yfinance raises plain Exception/HTTPError
+            last_exc = exc
+            if not _is_rate_limit_error(exc) or i == attempts - 1:
+                raise
+            time.sleep(base_delay * (2 ** i))
+    raise last_exc  # pragma: no cover
 
 
 COMPANY_TICKER_MAP = {
@@ -314,8 +381,7 @@ def fetch_stock_news(ticker, company_name=""):
         }]
 
 
-def build_chart(tkr, ticker):
-    hist = tkr.history(period="6mo", interval="1d")
+def build_chart(hist, ticker):
     if hist.empty:
         return "{}"
 
@@ -465,10 +531,14 @@ def analyze_stock(ticker: str) -> dict:
     if not ticker or len(ticker) > 25:
         return {"error": f"Could not find ticker for: '{original}'"}
 
+    cached = _cache_get(ticker)
+    if cached is not None:
+        return cached
+
     try:
         tkr = yf.Ticker(ticker)
-        info = tkr.info or {}
-        hist = tkr.history(period="6mo", interval="1d")
+        info = _with_retry(lambda: tkr.info or {})
+        hist = _with_retry(lambda: tkr.history(period="6mo", interval="1d"))
 
         if hist.empty:
             return {"error": f"No data for '{ticker}'. Check the symbol."}
@@ -489,7 +559,7 @@ def analyze_stock(ticker: str) -> dict:
         currency_symbol = _currency_symbol(currency)
 
         sig = generate_signals(closes, rsi_v, macd_l, sig_l, sma, ubb, lbb, currency_symbol)
-        chart = build_chart(tkr, ticker)
+        chart = build_chart(hist, ticker)
         news = fetch_stock_news(ticker, info.get("longName", ""))
 
         price = _safe(info.get("currentPrice") or closes[-1])
@@ -497,7 +567,7 @@ def analyze_stock(ticker: str) -> dict:
         change = round(price - prev, 2) if price and prev else None
         chg_pct = round(change / prev * 100, 2) if change and prev else None
 
-        return {
+        result = {
             "ticker": ticker,
             "name": info.get("longName", ticker),
             "currency": currency,
@@ -530,5 +600,17 @@ def analyze_stock(ticker: str) -> dict:
             "chart_json": chart,
             "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
+        _cache_set(ticker, result)
+        return result
     except Exception as e:
+        if _is_rate_limit_error(e):
+            return {
+                "error": (
+                    "Yahoo Finance is temporarily rate-limiting this server. "
+                    "This is a block on Yahoo's side (not a bug in the app) — "
+                    "please wait a minute and try again."
+                ),
+                "ticker": ticker,
+                "rate_limited": True,
+            }
         return {"error": str(e), "ticker": ticker}

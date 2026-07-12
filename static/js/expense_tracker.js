@@ -430,9 +430,9 @@ function getAuthPayload() {
 }
 
 function isUserAuthenticated() {
-    return !!(apiKey || sessionLinked || (userProfile && userProfile.email));
+    // Allow guest sessions (sessionId exists) OR Google-linked OR API key
+    return !!(apiKey || sessionLinked || (userProfile && userProfile.email) || sessionId);
 }
-
 async function restPost(path, payload = {}) {
     const auth = getAuthPayload();
     if (!auth) throw new Error('Session required. Please refresh the page.');

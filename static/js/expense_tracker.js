@@ -1435,7 +1435,8 @@ async function signOut() {
 function toggleAuthOverlay(show) {
     const overlay = document.getElementById('authOverlay');
     if (!overlay) return;
-    if (show && !apiKey) {
+    // Hide overlay if user has ANY session (guest or Google)
+    if (show && !apiKey && !sessionId) {
         overlay.classList.add('active');
     } else {
         overlay.classList.remove('active');

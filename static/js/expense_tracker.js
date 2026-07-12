@@ -1448,8 +1448,13 @@ function ensureAuthenticated(showToast = true) {
         toggleAuthOverlay(false);
         return true;
     }
+    // If we have a sessionId but not linked, still allow basic use
+    if (sessionId) {
+        toggleAuthOverlay(false);
+        return true;
+    }
     if (showToast) {
-        showMessage('Please sync with Google before using TrackExpensio.', 'warning');
+        showMessage('Please refresh the page to initialize your session.', 'warning');
     }
     toggleAuthOverlay(true);
     return false;

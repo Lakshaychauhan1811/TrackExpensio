@@ -1950,7 +1950,93 @@ async def home(request: Request):
 async def chat(request: Request):
     """Alias for home page"""
     return templates.TemplateResponse(request, "expense_tracker.html", {})
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy_page(request: Request):
+    return HTMLResponse(content="""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy - TrackExpensio</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.75; }
+.wrap { max-width: 780px; margin: 0 auto; padding: 48px 24px; }
+h1 { font-size: 30px; color: #6366f1; border-bottom: 3px solid #6366f1; padding-bottom: 12px; margin-bottom: 8px; }
+h2 { font-size: 17px; margin-top: 32px; margin-bottom: 8px; }
+p { margin-bottom: 12px; color: #334155; }
+a { color: #6366f1; }
+.back { display: inline-block; background: #6366f1; color: #fff; padding: 8px 18px; border-radius: 8px; text-decoration: none; margin-bottom: 32px; font-size: 14px; }
+.updated { color: #64748b; font-size: 13px; margin-bottom: 28px; display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<a href="/" class="back">&#8592; Back to TrackExpensio</a>
+<h1>Privacy Policy</h1>
+<span class="updated">Last updated: July 2026</span>
+<h2>1. Introduction</h2>
+<p>TrackExpensio operates at <a href="https://trackexpensio.onrender.com">trackexpensio.onrender.com</a>. This policy explains how we handle your data.</p>
+<h2>2. Data We Collect</h2>
+<p><strong>Google Account:</strong> Name, email, and profile picture when you sign in with Google.</p>
+<p><strong>Financial Data:</strong> Expenses, income, budgets, and investment records you enter or import.</p>
+<p><strong>Bank Data (optional):</strong> Transaction data via Plaid bank sync, stored in your private database.</p>
+<p><strong>Gmail (optional):</strong> Read-only access to bank alert emails only. We never store email content.</p>
+<h2>3. How We Use Data</h2>
+<p>Solely to provide TrackExpensio. We never sell your data or use it for advertising.</p>
+<h2>4. Data Storage</h2>
+<p>MongoDB Atlas with encryption at rest. Data isolated per user ID with bcrypt and rate limiting.</p>
+<h2>5. Third Parties</h2>
+<p>Google OAuth, Plaid, Groq AI, MongoDB Atlas, Render — each has their own privacy policy.</p>
+<h2>6. Your Rights</h2>
+<p>Access, correct, export, or delete your data anytime. Email <a href="mailto:lakshayc816@gmail.com">lakshayc816@gmail.com</a>.</p>
+<h2>7. Contact</h2>
+<p><a href="mailto:lakshayc816@gmail.com">lakshayc816@gmail.com</a></p>
+</div>
+</body>
+</html>""")
 
+
+@app.get("/terms", response_class=HTMLResponse)
+async def terms_page(request: Request):
+    return HTMLResponse(content="""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terms of Service - TrackExpensio</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.75; }
+.wrap { max-width: 780px; margin: 0 auto; padding: 48px 24px; }
+h1 { font-size: 30px; color: #6366f1; border-bottom: 3px solid #6366f1; padding-bottom: 12px; margin-bottom: 8px; }
+h2 { font-size: 17px; margin-top: 32px; margin-bottom: 8px; }
+p { margin-bottom: 12px; color: #334155; }
+a { color: #6366f1; }
+.back { display: inline-block; background: #6366f1; color: #fff; padding: 8px 18px; border-radius: 8px; text-decoration: none; margin-bottom: 32px; font-size: 14px; }
+.updated { color: #64748b; font-size: 13px; margin-bottom: 28px; display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<a href="/" class="back">&#8592; Back to TrackExpensio</a>
+<h1>Terms of Service</h1>
+<span class="updated">Last updated: July 2026</span>
+<h2>1. Acceptance</h2>
+<p>By using TrackExpensio you agree to these terms.</p>
+<h2>2. Service</h2>
+<p>TrackExpensio is an AI-powered personal finance tracker. Not a licensed financial advisor.</p>
+<h2>3. Not Financial Advice</h2>
+<p>Nothing in TrackExpensio constitutes professional financial, tax, or investment advice.</p>
+<h2>4. Your Responsibilities</h2>
+<p>You are responsible for data accuracy and keeping credentials secure.</p>
+<h2>5. Data Ownership</h2>
+<p>You own your data. We store it only to provide the service.</p>
+<h2>6. Contact</h2>
+<p><a href="mailto:lakshayc816@gmail.com">lakshayc816@gmail.com</a></p>
+</div>
+</body>
+</html>""")
 
 if __name__ == "__main__":
     import uvicorn

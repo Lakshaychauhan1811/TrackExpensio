@@ -72,6 +72,7 @@ from session_manager import SessionManager
 from security import security_manager
 from audit_logger import audit_logger, AuditAction, DETAILED_AUDIT_TOOLS, parse_audit_dates
 from fx_timing import fx_manager
+from bank_sync_backend import setup_bank_routes
 
 
 def _server_host() -> str:
@@ -194,7 +195,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+setup_bank_routes(app)
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")

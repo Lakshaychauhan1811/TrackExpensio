@@ -22,7 +22,7 @@ from contextlib import asynccontextmanager
 from email.message import EmailMessage
 from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, AsyncGenerator
-
+from bank_sync_backend import setup_bank_routes
 from dotenv import load_dotenv
 load_dotenv()
 

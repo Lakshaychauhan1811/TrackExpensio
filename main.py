@@ -3385,6 +3385,7 @@ TOOL_REGISTRY = {
     "get_help": get_help,
 }
 
+
 # Start the server
 if __name__ == "__main__":
     # For Claude Desktop, use STDIO transport

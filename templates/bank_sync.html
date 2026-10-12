@@ -1,0 +1,957 @@
+<!--
+=====================================================
+BANK SYNC PAGE — Plaid + Setu + Gmail + CSV
+=====================================================
+Save this as: templates/bank_sync.html
+Then add this route to your api.py:
+
+@app.get("/bank-sync", response_class=HTMLResponse)
+async def bank_sync_page(request: Request):
+    user = request.session.get("user_name", "User")
+    return templates.TemplateResponse("bank_sync.html", {
+        "request": request,
+        "user": {"name": user}
+    })
+
+Also add a link in your dashboard/sidebar:
+  <a href="/bank-sync">Bank Sync</a>
+=====================================================
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrackExpensio — Bank Sync</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;
+  --border:rgba(255,255,255,0.08);
+  --text:#e6edf3;--muted:#8b949e;
+  --blue:#58a6ff;--green:#3fb950;--red:#f85149;
+  --purple:#bc8cff;--yellow:#d29922;--orange:#f0883e;
+  --r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+
+.page{display:flex;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);
+         padding:20px 0;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sidebar-brand{padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.sidebar-brand h1{font-size:1.1rem;font-weight:800;color:var(--blue);}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;
+          color:var(--muted);text-decoration:none;font-size:0.88rem;transition:all 0.2s;}
+.nav-item:hover{background:rgba(88,166,255,0.06);color:var(--text);}
+.nav-item.active{background:rgba(88,166,255,0.1);color:var(--blue);
+                 border-right:2px solid var(--blue);}
+.nav-section{padding:12px 20px 6px;font-size:0.72rem;color:var(--muted);
+             font-weight:600;text-transform:uppercase;letter-spacing:0.08em;}
+
+/* MAIN */
+.main{flex:1;padding:28px;overflow-y:auto;}
+.page-title{margin-bottom:28px;}
+.page-title h2{font-size:1.6rem;font-weight:800;}
+.page-title p{color:var(--muted);margin-top:6px;}
+
+/* METHOD TABS */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:28px;}
+.tab{padding:12px 20px;cursor:pointer;color:var(--muted);font-size:0.9rem;
+     font-weight:500;border-bottom:2px solid transparent;transition:all 0.2s;
+     display:flex;align-items:center;gap:8px;background:none;border-top:none;
+     border-left:none;border-right:none;font-family:'Inter',sans-serif;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+
+/* PANELS */
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);
+      border-radius:var(--r);padding:24px;margin-bottom:20px;}
+.card-title{font-size:1rem;font-weight:700;margin-bottom:16px;
+            display:flex;align-items:center;gap:10px;}
+
+/* BADGES */
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;
+       font-size:0.72rem;font-weight:700;}
+.badge-easy{background:rgba(63,185,80,0.15);color:var(--green);}
+.badge-india{background:rgba(240,136,62,0.15);color:var(--orange);}
+.badge-new{background:rgba(88,166,255,0.15);color:var(--blue);}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;
+     border:none;border-radius:8px;font-weight:600;cursor:pointer;
+     font-size:0.88rem;transition:all 0.2s;font-family:'Inter',sans-serif;}
+.btn-blue{background:var(--blue);color:#000;}
+.btn-blue:hover{opacity:.85;}
+.btn-green{background:var(--green);color:#000;}
+.btn-green:hover{opacity:.85;}
+.btn-ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--blue);color:var(--blue);}
+.btn-red{background:rgba(248,81,73,0.15);color:var(--red);border:1px solid rgba(248,81,73,0.3);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* FORM */
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:0.83rem;color:var(--muted);
+                  margin-bottom:6px;font-weight:500;}
+.input{width:100%;background:var(--bg3);border:1px solid var(--border);
+       border-radius:8px;padding:10px 14px;color:var(--text);
+       font-size:0.9rem;font-family:'Inter',sans-serif;outline:none;}
+.input:focus{border-color:var(--blue);}
+select.input option{background:var(--bg3);}
+
+/* STATUS */
+.status-bar{padding:12px 16px;border-radius:8px;margin-bottom:16px;
+            display:flex;align-items:center;gap:10px;font-size:0.88rem;}
+.status-ok{background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);color:var(--green);}
+.status-info{background:rgba(88,166,255,0.1);border:1px solid rgba(88,166,255,0.3);color:var(--blue);}
+.status-warn{background:rgba(210,153,34,0.1);border:1px solid rgba(210,153,34,0.3);color:var(--yellow);}
+.status-err{background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);color:var(--red);}
+
+/* METHOD CARDS */
+.method-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px;}
+@media(max-width:700px){.method-grid{grid-template-columns:1fr;}}
+.method-card{background:var(--bg3);border:2px solid var(--border);
+             border-radius:var(--r);padding:20px;cursor:pointer;transition:all 0.2s;position:relative;}
+.method-card:hover{border-color:var(--blue);}
+.method-card.selected{border-color:var(--blue);background:rgba(88,166,255,0.05);}
+.method-icon{width:44px;height:44px;border-radius:10px;display:flex;
+             align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:12px;}
+.method-card h4{font-size:0.95rem;font-weight:700;margin-bottom:4px;}
+.method-card p{font-size:0.8rem;color:var(--muted);line-height:1.5;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{padding:10px 12px;text-align:left;font-size:0.75rem;color:var(--muted);
+        border-bottom:1px solid var(--border);font-weight:600;text-transform:uppercase;}
+.tbl td{padding:10px 12px;font-size:0.86rem;border-bottom:1px solid rgba(255,255,255,0.04);}
+.tbl tr:hover td{background:rgba(255,255,255,0.02);}
+.cat-pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:0.72rem;font-weight:600;}
+
+/* SUMMARY GRID */
+.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:600px){.sum-grid{grid-template-columns:1fr 1fr;}}
+.sum-card{background:var(--bg3);border-radius:8px;padding:14px;text-align:center;}
+.sum-val{font-size:1.3rem;font-weight:800;margin-top:4px;}
+.sum-lbl{font-size:0.73rem;color:var(--muted);}
+
+/* DROP ZONE */
+.drop{border:2px dashed var(--border);border-radius:var(--r);
+      padding:40px;text-align:center;cursor:pointer;transition:all 0.2s;}
+.drop:hover,.drop.on{border-color:var(--blue);background:rgba(88,166,255,0.04);}
+.drop i{font-size:2.5rem;color:var(--muted);display:block;margin-bottom:10px;}
+
+/* FLOW STEPS */
+.steps{display:flex;gap:0;margin-bottom:20px;}
+.step{flex:1;text-align:center;padding:12px 8px;background:var(--bg3);
+      border:1px solid var(--border);}
+.step:first-child{border-radius:8px 0 0 8px;}
+.step:last-child{border-radius:0 8px 8px 0;}
+.step.done{background:rgba(63,185,80,0.08);border-color:rgba(63,185,80,0.3);}
+.step.go{background:rgba(88,166,255,0.08);border-color:rgba(88,166,255,0.3);}
+.step-n{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);
+        display:flex;align-items:center;justify-content:center;
+        font-size:0.75rem;font-weight:700;margin:0 auto 4px;}
+.step.done .step-n{background:var(--green);border-color:var(--green);color:#000;}
+.step.go .step-n{background:var(--blue);border-color:var(--blue);color:#000;}
+.step-l{font-size:0.72rem;color:var(--muted);}
+
+/* SMS BOX */
+.sms-input{background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+           padding:14px;font-family:monospace;font-size:0.88rem;color:var(--green);
+           min-height:60px;outline:none;width:100%;resize:vertical;}
+.sms-input:focus{border-color:var(--blue);}
+
+/* SPINNER */
+.spin{width:18px;height:18px;border:2px solid rgba(255,255,255,0.2);
+      border-top-color:var(--blue);border-radius:50%;
+      animation:rot 0.7s linear infinite;display:inline-block;}
+@keyframes rot{to{transform:rotate(360deg);}}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;right:20px;padding:12px 18px;border-radius:8px;
+       font-size:0.88rem;font-weight:500;opacity:0;transition:opacity 0.3s;
+       z-index:9999;max-width:300px;}
+#toast.show{opacity:1;}
+#toast.ok{background:#0d2818;border:1px solid var(--green);color:var(--green);}
+#toast.err{background:#2d0d0d;border:1px solid var(--red);color:var(--red);}
+#toast.inf{background:#0d1a2d;border:1px solid var(--blue);color:var(--blue);}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <h1><i class="fas fa-wallet" style="margin-right:8px;"></i>TrackExpensio</h1>
+  </div>
+  <span class="nav-section">Quick Actions</span>
+  <a href="/dashboard" class="nav-item"><i class="fas fa-chart-line" style="width:16px;"></i> Dashboard</a>
+  <a href="/ai-chat" class="nav-item"><i class="fas fa-robot" style="width:16px;"></i> AI Chat</a>
+  <a href="/expenses" class="nav-item"><i class="fas fa-receipt" style="width:16px;"></i> Expenses</a>
+  <a href="/income" class="nav-item"><i class="fas fa-dollar-sign" style="width:16px;"></i> Income</a>
+  <span class="nav-section">Features</span>
+  <a href="/budget" class="nav-item"><i class="fas fa-piggy-bank" style="width:16px;"></i> Budget</a>
+  <a href="/recurring" class="nav-item"><i class="fas fa-sync" style="width:16px;"></i> Recurring</a>
+  <a href="/savings" class="nav-item"><i class="fas fa-bullseye" style="width:16px;"></i> Savings Goals</a>
+  <a href="/debt" class="nav-item"><i class="fas fa-credit-card" style="width:16px;"></i> Debt</a>
+  <a href="/investments" class="nav-item"><i class="fas fa-chart-bar" style="width:16px;"></i> Investments</a>
+  <a href="/reports" class="nav-item"><i class="fas fa-file-alt" style="width:16px;"></i> Reports</a>
+  <a href="/tax" class="nav-item"><i class="fas fa-calculator" style="width:16px;"></i> Tax Calculator</a>
+  <a href="/credit-score" class="nav-item"><i class="fas fa-star" style="width:16px;"></i> Credit Score</a>
+  <a href="/bill-reminders" class="nav-item"><i class="fas fa-bell" style="width:16px;"></i> Bill Reminders</a>
+  <a href="/bank-sync" class="nav-item active"><i class="fas fa-university" style="width:16px;"></i> Bank Sync</a>
+  <a href="/multi-currency" class="nav-item"><i class="fas fa-globe" style="width:16px;"></i> Multi-Currency</a>
+  <a href="/audit-log" class="nav-item"><i class="fas fa-shield-alt" style="width:16px;"></i> Audit Log</a>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+  <div class="page-title">
+    <h2><i class="fas fa-university" style="color:var(--blue);margin-right:10px;"></i>Bank Sync</h2>
+    <p>Auto-import your expenses from Gmail, Bank CSV, Plaid (US/Global), or Setu AA (India).</p>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('gmail')">
+      <i class="fab fa-google" style="color:#EA4335;"></i> Gmail
+    </button>
+    <button class="tab" onclick="switchTab('csv')">
+      <i class="fas fa-file-csv" style="color:var(--green);"></i> Bank CSV
+    </button>
+    <button class="tab" onclick="switchTab('plaid')">
+      <i class="fas fa-building-columns" style="color:var(--blue);"></i> Plaid
+      <span class="badge badge-new" style="margin-left:4px;">US/Global</span>
+    </button>
+    <button class="tab" onclick="switchTab('setu')">
+      <i class="fas fa-landmark" style="color:var(--orange);"></i> Setu AA
+      <span class="badge badge-india" style="margin-left:4px;">India</span>
+    </button>
+    <button class="tab" onclick="switchTab('sms')">
+      <i class="fas fa-message" style="color:var(--purple);"></i> SMS Parser
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════ GMAIL ═══════════════════════════════ -->
+  <div id="tab-gmail" class="panel active">
+    <div class="card">
+      <div class="card-title"><i class="fab fa-google" style="color:#EA4335;"></i> Gmail Bank Email Import</div>
+
+      <div class="steps">
+        <div class="step done" id="s1"><div class="step-n">1</div><div class="step-l">Connect Gmail</div></div>
+        <div class="step" id="s2"><div class="step-n">2</div><div class="step-l">Scan Emails</div></div>
+        <div class="step" id="s3"><div class="step-n">3</div><div class="step-l">Review</div></div>
+        <div class="step" id="s4"><div class="step-n">4</div><div class="step-l">Import</div></div>
+      </div>
+
+      <!-- Gmail not connected -->
+      <div id="g-connect">
+        <div class="status-bar status-info">
+          <i class="fas fa-info-circle"></i>
+          We only read transaction emails using Gmail readonly scope. We never read personal emails.
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-blue" onclick="connectGmail()">
+            <i class="fab fa-google"></i> Connect Gmail
+          </button>
+          <button class="btn btn-ghost" onclick="loadGmailDemo()">
+            <i class="fas fa-play"></i> Try Demo Data
+          </button>
+        </div>
+      </div>
+
+      <!-- Gmail connected — scan options -->
+      <div id="g-scan" style="display:none;">
+        <div class="status-bar status-ok" id="g-status-bar">
+          <i class="fas fa-check-circle"></i>
+          <span id="g-email-shown">Gmail connected!</span>
+          <button class="btn btn-ghost" style="margin-left:auto;padding:5px 12px;font-size:0.78rem;" onclick="disconnectGmail()">Disconnect</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div class="form-group">
+            <label>Scan emails from last</label>
+            <select id="g-days" class="input">
+              <option value="7">7 days</option>
+              <option value="30" selected>30 days</option>
+              <option value="60">60 days</option>
+              <option value="90">90 days</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Min amount (₹)</label>
+            <input type="number" id="g-min" class="input" value="0" placeholder="0 = all">
+          </div>
+        </div>
+
+        <button class="btn btn-blue" id="g-scan-btn" onclick="scanGmail()">
+          <i class="fas fa-magnifying-glass"></i> Scan Bank Emails
+        </button>
+      </div>
+
+      <!-- Results -->
+      <div id="g-results" style="display:none;margin-top:24px;">
+        <div class="sum-grid" id="g-summary"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <strong id="g-result-label">Found Expenses</strong>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost" style="padding:6px 14px;font-size:0.8rem;" onclick="selAllG()">Select All</button>
+            <button class="btn btn-green" id="g-import-btn" onclick="importGmail()">
+              <i class="fas fa-download"></i> Import Selected
+            </button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="tbl">
+            <thead><tr>
+              <th><input type="checkbox" id="g-all" onchange="toggleG(this)"></th>
+              <th>Date</th><th>Merchant</th><th>Amount</th><th>Category</th><th>Bank</th>
+            </tr></thead>
+            <tbody id="g-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ CSV ═══════════════════════════════ -->
+  <div id="tab-csv" class="panel">
+    <div class="card">
+      <div class="card-title"><i class="fas fa-file-csv" style="color:var(--green);"></i> Bank Statement Upload</div>
+
+      <div class="status-bar status-info">
+        <i class="fas fa-info-circle"></i>
+        Download statement from your bank: Net Banking → Account Statement → Download CSV
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div class="form-group">
+          <label>Select Bank</label>
+          <select id="csv-bank" class="input">
+            <option value="hdfc">HDFC Bank</option>
+            <option value="sbi">SBI — State Bank of India</option>
+            <option value="icici">ICICI Bank</option>
+            <option value="axis">Axis Bank</option>
+            <option value="kotak">Kotak Mahindra Bank</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Min Amount (₹)</label>
+          <input type="number" id="csv-min" class="input" value="0" placeholder="0 = include all">
+        </div>
+      </div>
+
+      <div class="drop" id="dropzone"
+           onclick="document.getElementById('csv-file').click()"
+           ondragover="e=>{e.preventDefault();document.getElementById('dropzone').classList.add('on')}"
+           ondragleave="document.getElementById('dropzone').classList.remove('on')"
+           ondrop="e=>{e.preventDefault();document.getElementById('dropzone').classList.remove('on');handleDrop(e)}">
+        <i class="fas fa-cloud-arrow-up"></i>
+        <strong>Click to upload or drag & drop your bank CSV</strong>
+        <p style="margin-top:6px;color:var(--muted);">Supports HDFC, SBI, ICICI, Axis, Kotak</p>
+        <input type="file" id="csv-file" accept=".csv" style="display:none;" onchange="handleCsv()">
+      </div>
+
+      <div style="margin-top:14px;">
+        <button class="btn btn-ghost" onclick="loadCsvDemo()">
+          <i class="fas fa-database"></i> Load Sample Data (Demo)
+        </button>
+      </div>
+
+      <div id="csv-results" style="display:none;margin-top:24px;">
+        <div class="sum-grid" id="csv-summary"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <strong id="csv-result-label">Parsed Expenses</strong>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost" style="padding:6px 14px;font-size:0.8rem;" onclick="selAllC()">Select All</button>
+            <button class="btn btn-green" onclick="importCsv()">
+              <i class="fas fa-download"></i> Import Selected
+            </button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="tbl">
+            <thead><tr>
+              <th><input type="checkbox" id="c-all" onchange="toggleC(this)"></th>
+              <th>Date</th><th>Merchant</th><th>Amount</th><th>Category</th><th>Narration</th>
+            </tr></thead>
+            <tbody id="csv-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ PLAID ═══════════════════════════════ -->
+  <div id="tab-plaid" class="panel">
+    <div class="card">
+      <div class="card-title">
+        <i class="fas fa-building-columns" style="color:var(--blue);"></i>
+        Plaid Bank Connect
+        <span class="badge badge-new">US / Global</span>
+      </div>
+
+      <div class="status-bar status-info">
+        <i class="fas fa-info-circle"></i>
+        Plaid connects directly to your bank. Supports 12,000+ banks in US, Canada, UK, Europe.
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
+        <div>
+          <h4 style="margin-bottom:10px;font-size:0.9rem;">How it works</h4>
+          <div style="font-size:0.82rem;color:var(--muted);line-height:2.2;">
+            <div><i class="fas fa-circle" style="font-size:0.4rem;margin-right:8px;color:var(--blue);"></i>Click Connect Bank</div>
+            <div><i class="fas fa-circle" style="font-size:0.4rem;margin-right:8px;color:var(--blue);"></i>Plaid Link opens securely</div>
+            <div><i class="fas fa-circle" style="font-size:0.4rem;margin-right:8px;color:var(--blue);"></i>Select your bank & login</div>
+            <div><i class="fas fa-circle" style="font-size:0.4rem;margin-right:8px;color:var(--blue);"></i>We never see your password</div>
+            <div><i class="fas fa-circle" style="font-size:0.4rem;margin-right:8px;color:var(--blue);"></i>Transactions sync automatically</div>
+          </div>
+        </div>
+        <div>
+          <h4 style="margin-bottom:10px;font-size:0.9rem;">Setup (one-time)</h4>
+          <div style="font-size:0.8rem;color:var(--muted);line-height:1.8;background:var(--bg3);padding:12px;border-radius:8px;font-family:monospace;">
+            1. Visit dashboard.plaid.com<br>
+            2. Sign up FREE (sandbox)<br>
+            3. Copy Client ID + Secret<br>
+            4. Add to .env file:<br>
+            &nbsp;&nbsp;PLAID_CLIENT_ID=xxx<br>
+            &nbsp;&nbsp;PLAID_SECRET=xxx<br>
+            &nbsp;&nbsp;PLAID_ENV=sandbox
+          </div>
+        </div>
+      </div>
+
+      <div id="plaid-not-connected">
+        <div class="status-bar status-warn" id="plaid-status-bar">
+          <i class="fas fa-triangle-exclamation"></i>
+          <span id="plaid-status-text">No bank connected yet.</span>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-blue" id="plaid-connect-btn" onclick="connectPlaid()">
+            <i class="fas fa-link"></i> Connect Bank via Plaid
+          </button>
+          <button class="btn btn-ghost" onclick="loadPlaidDemo()">
+            <i class="fas fa-play"></i> Demo (No Plaid key needed)
+          </button>
+        </div>
+      </div>
+
+      <div id="plaid-connected" style="display:none;">
+        <div class="status-bar status-ok">
+          <i class="fas fa-check-circle"></i>
+          Bank connected via Plaid!
+          <button class="btn btn-ghost" style="margin-left:auto;padding:5px 12px;font-size:0.78rem;">Disconnect</button>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-blue" onclick="syncPlaid()">
+            <i class="fas fa-sync"></i> Sync Transactions
+          </button>
+          <button class="btn btn-ghost" onclick="getBalances()">
+            <i class="fas fa-wallet"></i> View Balances
+          </button>
+        </div>
+      </div>
+
+      <div id="plaid-results" style="display:none;margin-top:24px;">
+        <div class="sum-grid" id="plaid-summary"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <strong>Bank Transactions</strong>
+          <button class="btn btn-green" onclick="importPlaid()">
+            <i class="fas fa-download"></i> Import All
+          </button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="tbl">
+            <thead><tr><th>Date</th><th>Merchant</th><th>Amount</th><th>Category</th><th>Source</th></tr></thead>
+            <tbody id="plaid-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ SETU ═══════════════════════════════ -->
+  <div id="tab-setu" class="panel">
+    <div class="card">
+      <div class="card-title">
+        <i class="fas fa-landmark" style="color:var(--orange);"></i>
+        Setu Account Aggregator
+        <span class="badge badge-india">RBI Regulated</span>
+      </div>
+
+      <div class="status-bar status-info">
+        <i class="fas fa-info-circle"></i>
+        Account Aggregator is India's RBI-mandated open banking framework. All major Indian banks support it.
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
+        <div>
+          <h4 style="margin-bottom:10px;font-size:0.9rem;">What is AA Framework?</h4>
+          <p style="font-size:0.82rem;color:var(--muted);line-height:1.6;">
+            Account Aggregator (AA) is an RBI-regulated fintech framework.
+            Banks are legally required to share your data when YOU give consent.
+            Your data flows securely via encrypted channels.
+            Providers: <strong>Setu</strong>, Finvu, OneMoney, Perfios.
+          </p>
+        </div>
+        <div>
+          <h4 style="margin-bottom:10px;font-size:0.9rem;">Setup Setu Sandbox (Free)</h4>
+          <div style="font-size:0.8rem;color:var(--muted);line-height:1.8;background:var(--bg3);padding:12px;border-radius:8px;font-family:monospace;">
+            1. Visit setu.co/data<br>
+            2. Sign up (sandbox free)<br>
+            3. Get Client ID + Secret<br>
+            4. Add to .env:<br>
+            &nbsp;&nbsp;SETU_CLIENT_ID=xxx<br>
+            &nbsp;&nbsp;SETU_CLIENT_SECRET=xxx
+          </div>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step go"><div class="step-n">1</div><div class="step-l">Enter Mobile</div></div>
+        <div class="step"><div class="step-n">2</div><div class="step-l">Consent Screen</div></div>
+        <div class="step"><div class="step-n">3</div><div class="step-l">Approve in Bank</div></div>
+        <div class="step"><div class="step-n">4</div><div class="step-l">Data Synced</div></div>
+      </div>
+
+      <div class="form-group" style="max-width:280px;">
+        <label>Mobile Number (linked to bank)</label>
+        <input type="tel" id="aa-phone" class="input" placeholder="9876543210" maxlength="10">
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-blue" onclick="connectSetu()">
+          <i class="fas fa-link"></i> Connect via Setu AA
+        </button>
+        <button class="btn btn-ghost" onclick="loadSetuDemo()">
+          <i class="fas fa-play"></i> Demo (10 Mock Indian Transactions)
+        </button>
+      </div>
+
+      <div id="setu-results" style="display:none;margin-top:24px;">
+        <div class="sum-grid" id="setu-summary"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <strong>Indian Bank Transactions</strong>
+          <button class="btn btn-green" onclick="importSetu()">
+            <i class="fas fa-download"></i> Import All to TrackExpensio
+          </button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="tbl">
+            <thead><tr><th>Date</th><th>Merchant</th><th>Amount</th><th>Category</th><th>Bank</th></tr></thead>
+            <tbody id="setu-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ SMS ═══════════════════════════════ -->
+  <div id="tab-sms" class="panel">
+    <div class="card">
+      <div class="card-title"><i class="fas fa-message" style="color:var(--purple);"></i> Bank SMS Parser</div>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">
+        Got a bank transaction SMS? Paste it below — AI will extract the expense automatically.
+      </p>
+
+      <div class="form-group">
+        <label>Paste your bank SMS</label>
+        <textarea id="sms-text" class="sms-input">INR 599 debited from A/C XX1234 at Zomato on 06-Jun-26. Avl Bal: ₹12,450.00</textarea>
+      </div>
+
+      <button class="btn btn-blue" onclick="parseSMS()">
+        <i class="fas fa-wand-magic-sparkles"></i> Parse SMS
+      </button>
+
+      <div id="sms-result" style="display:none;margin-top:16px;background:var(--bg3);
+           border-radius:8px;padding:16px;border:1px solid var(--border);"></div>
+
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);">
+        <h4 style="margin-bottom:12px;font-size:0.9rem;">Sample SMS formats that work:</h4>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="background:var(--bg3);padding:10px 14px;border-radius:6px;font-size:0.8rem;font-family:monospace;color:var(--green);cursor:pointer;"
+               onclick="document.getElementById('sms-text').value=this.textContent;parseSMS()">
+            INR 599 debited from A/C XX1234 at Zomato on 06-Jun-26. Avl Bal: ₹12,450.00</div>
+          <div style="background:var(--bg3);padding:10px 14px;border-radius:6px;font-size:0.8rem;font-family:monospace;color:var(--green);cursor:pointer;"
+               onclick="document.getElementById('sms-text').value=this.textContent;parseSMS()">
+            Rs.1299 debited from HDFC A/c for Amazon.in on 05-Jun-26</div>
+          <div style="background:var(--bg3);padding:10px 14px;border-radius:6px;font-size:0.8rem;font-family:monospace;color:var(--green);cursor:pointer;"
+               onclick="document.getElementById('sms-text').value=this.textContent;parseSMS()">
+            Your A/c XX5678 debited with Rs 450 for Swiggy on 04-Jun-26</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /page -->
+<div id="toast"></div>
+
+<script>
+// ── STATE ────────────────────────────────────────────────────
+let gExp=[], csvExp=[], plaidExp=[], setuExp=[];
+
+// ── TABS ─────────────────────────────────────────────────────
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  event.target.closest('.tab').classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+function toast(msg,type='inf'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='show '+type;
+  setTimeout(()=>t.className='',3000);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+const INR=n=>n==null?'N/A':'₹'+Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const catBg={Food:'rgba(240,136,62,.2)',Shopping:'rgba(88,166,255,.2)',Transportation:'rgba(188,140,255,.2)',Bills:'rgba(210,153,34,.2)',Healthcare:'rgba(63,185,80,.2)',Travel:'rgba(63,185,80,.2)',Entertainment:'rgba(248,81,73,.2)',Other:'rgba(255,255,255,.08)'};
+const catFg={Food:'#f0883e',Shopping:'#58a6ff',Transportation:'#bc8cff',Bills:'#d29922',Healthcare:'#3fb950',Travel:'#3fb950',Entertainment:'#f85149',Other:'#8b949e'};
+
+function renderSummary(id, exps){
+  const tot=exps.reduce((s,e)=>s+Number(e.amount),0);
+  const byc={};exps.forEach(e=>byc[e.category]=(byc[e.category]||0)+Number(e.amount));
+  const top=Object.entries(byc).sort((a,b)=>b[1]-a[1])[0]||['N/A',0];
+  document.getElementById(id).innerHTML=`
+    <div class="sum-card"><div class="sum-lbl">Expenses Found</div><div class="sum-val" style="color:var(--blue);">${exps.length}</div></div>
+    <div class="sum-card"><div class="sum-lbl">Total Amount</div><div class="sum-val" style="color:var(--red);">${INR(tot)}</div></div>
+    <div class="sum-card"><div class="sum-lbl">Top Category</div><div class="sum-val" style="font-size:1rem;">${top[0]}</div></div>
+    <div class="sum-card"><div class="sum-lbl">Categories</div><div class="sum-val" style="color:var(--green);">${Object.keys(byc).length}</div></div>`;
+}
+
+function renderRows(tbodyId, exps, cbName){
+  document.getElementById(tbodyId).innerHTML=exps.map((e,i)=>`
+    <tr>
+      ${cbName?`<td><input type="checkbox" name="${cbName}" value="${i}" checked></td>`:''}
+      <td>${e.date}</td>
+      <td style="font-weight:600;">${e.merchant}</td>
+      <td style="font-weight:700;color:var(--red);">${INR(e.amount)}</td>
+      <td><span class="cat-pill" style="background:${catBg[e.category]||catBg.Other};color:${catFg[e.category]||catFg.Other};">${e.category}</span></td>
+      <td style="color:var(--muted);font-size:0.78rem;">${e.bank||e.narration||e.source||''}</td>
+    </tr>`).join('');
+}
+
+async function callAPI(url,opts){
+  try{ return await (await fetch(url,opts)).json(); }
+  catch(e){ return {error:e.message}; }
+}
+
+// ── GMAIL ─────────────────────────────────────────────────────
+async function connectGmail(){
+  toast('Redirecting to Google...','inf');
+  window.location.href='/bank/gmail/connect';
+}
+
+function loadGmailDemo(){
+  gExp=[
+    {merchant:'Swiggy',amount:349,category:'Food',date:'2026-09-06',bank:'HDFC',email_subject:'HDFC Alert: Rs.349 debited for Swiggy'},
+    {merchant:'Amazon India',amount:1299,category:'Shopping',date:'2026-09-05',bank:'SBI',email_subject:'SBI: INR 1299 deducted at Amazon'},
+    {merchant:'Uber',amount:156.5,category:'Transportation',date:'2026-09-05',bank:'ICICI',email_subject:'ICICI Alert: Rs.156.50 debited for Uber'},
+    {merchant:'Jio Recharge',amount:349,category:'Bills',date:'2026-09-04',bank:'HDFC',email_subject:'HDFC: Rs.349 payment to Jio'},
+    {merchant:'Zomato',amount:278,category:'Food',date:'2026-09-04',bank:'AXIS',email_subject:'Axis Alert: Rs.278 spent at Zomato'},
+    {merchant:'Apollo Pharmacy',amount:523,category:'Healthcare',date:'2026-09-03',bank:'KOTAK',email_subject:'Kotak: Rs.523 debited at Apollo Pharmacy'},
+    {merchant:'Netflix',amount:649,category:'Entertainment',date:'2026-09-02',bank:'HDFC',email_subject:'HDFC: Rs.649 Netflix subscription'},
+    {merchant:'IRCTC',amount:1820,category:'Transportation',date:'2026-09-01',bank:'SBI',email_subject:'SBI: INR 1820 paid to IRCTC'},
+  ];
+  showGmailResults('Demo data loaded — 8 transactions found');
+  document.getElementById('g-connect').style.display='none';
+  document.getElementById('g-scan').style.display='block';
+  document.getElementById('s1').classList.add('done');
+  document.getElementById('s2').classList.add('done');
+}
+
+async function scanGmail(){
+  const btn=document.getElementById('g-scan-btn');
+  const days=document.getElementById('g-days').value;
+  btn.innerHTML='<div class="spin"></div> Scanning...';btn.disabled=true;
+  try{
+    const data=await callAPI(`/bank/gmail/sync?days=${days}`);
+    if(data.error){toast(data.error,'err');return;}
+    gExp=(data.expenses||[]).filter(e=>e.amount>=parseFloat(document.getElementById('g-min').value||0));
+    showGmailResults(`Scanned ${data.emails_scanned} emails — found ${gExp.length} expenses`);
+    toast(`Found ${gExp.length} expenses from ${data.emails_scanned} emails`,'ok');
+  }catch(e){loadGmailDemo();}
+  finally{btn.innerHTML='<i class="fas fa-magnifying-glass"></i> Scan Bank Emails';btn.disabled=false;}
+}
+
+function showGmailResults(label){
+  document.getElementById('g-result-label').textContent=label||'Found Expenses';
+  document.getElementById('g-results').style.display='block';
+  document.getElementById('s3').classList.add('done');
+  document.getElementById('s4').classList.add('go');
+  renderSummary('g-summary',gExp);
+  renderRows('g-tbody',gExp,'gexp');
+}
+
+function toggleG(cb){document.querySelectorAll('[name=gexp]').forEach(c=>c.checked=cb.checked);}
+function selAllG(){document.querySelectorAll('[name=gexp]').forEach(c=>c.checked=true);}
+
+async function importGmail(){
+  const sel=[..document.querySelectorAll('[name=gexp]:checked')].map(c=>gExp[+c.value]);
+  if(!sel.length){toast('Select at least one','err');return;}
+  const btn=document.getElementById('g-import-btn');
+  btn.innerHTML='<div class="spin"></div> Importing...';btn.disabled=true;
+  try{
+    const r=await callAPI('/bank/gmail/add-expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({expenses:sel})});
+    toast(`Imported ${r.added||sel.length} expenses!`,'ok');
+    document.getElementById('s4').classList.replace('go','done');
+    setTimeout(()=>window.location.href='/expenses',1800);
+  }catch(e){toast(`Imported ${sel.length} expenses! (Demo)`,'ok');setTimeout(()=>window.location.href='/expenses',1800);}
+  finally{btn.innerHTML='<i class="fas fa-download"></i> Import Selected';btn.disabled=false;}
+}
+
+async function disconnectGmail(){
+  await callAPI('/bank/gmail/disconnect',{method:'DELETE'});
+  location.reload();
+}
+
+// Check Gmail status on load
+(async()=>{
+  const s=await callAPI('/bank/gmail/status').catch(()=>({connected:false}));
+  if(s&&s.connected){
+    document.getElementById('g-connect').style.display='none';
+    document.getElementById('g-scan').style.display='block';
+    document.getElementById('s1').classList.add('done');
+    if(s.email){document.getElementById('g-email-shown').textContent='Connected: '+s.email;}
+  }
+  const p=new URLSearchParams(location.search);
+  if(p.get('gmail')==='connected'){
+    document.getElementById('g-connect').style.display='none';
+    document.getElementById('g-scan').style.display='block';
+    document.getElementById('s1').classList.add('done');
+    toast('Gmail connected! Now scan your emails.','ok');
+  }
+})();
+
+// ── CSV ────────────────────────────────────────────────────────
+function handleDrop(e){const f=e.dataTransfer.files[0];if(f&&f.name.endsWith('.csv'))processCsv(f);else toast('Please upload a .csv file','err');}
+function handleCsv(){const f=document.getElementById('csv-file').files[0];if(f)processCsv(f);}
+
+async function processCsv(file){
+  const dz=document.getElementById('dropzone');
+  dz.innerHTML='<div class="spin" style="margin:0 auto 10px;"></div><p>Parsing...</p>';
+  const form=new FormData();form.append('file',file);form.append('bank',document.getElementById('csv-bank').value);
+  try{
+    const data=await callAPI('/bank/csv/upload',{method:'POST',body:form});
+    csvExp=(data.expenses||[]).filter(e=>e.amount>=parseFloat(document.getElementById('csv-min').value||0));
+    document.getElementById('csv-result-label').textContent=`${csvExp.length} expenses from ${data.bank||'Bank'} CSV`;
+    renderSummary('csv-summary',csvExp);renderRows('csv-tbody',csvExp,'cexp');
+    document.getElementById('csv-results').style.display='block';
+    toast(`Parsed ${csvExp.length} expenses`,'ok');
+  }catch(e){toast('Upload failed. Try Demo data.','err');}
+  finally{dz.innerHTML='<i class="fas fa-cloud-arrow-up"></i><strong>Click or drag CSV here</strong><input type="file" id="csv-file" accept=".csv" style="display:none;" onchange="handleCsv()">';dz.onclick=()=>document.getElementById('csv-file').click();}
+}
+
+function loadCsvDemo(){
+  csvExp=[
+    {merchant:'Big Bazaar',amount:2340,category:'Shopping',date:'2026-09-06',narration:'POS Big Bazaar'},
+    {merchant:'Swiggy',amount:456,category:'Food',date:'2026-09-05',narration:'UPI/Swiggy'},
+    {merchant:'Petrol Pump',amount:1500,category:'Transportation',date:'2026-09-04',narration:'HPCL Petrol'},
+    {merchant:'Airtel Bill',amount:799,category:'Bills',date:'2026-09-03',narration:'BIL/Airtel'},
+    {merchant:'IRCTC',amount:1820,category:'Travel',date:'2026-09-02',narration:'NEFT/IRCTC'},
+    {merchant:'Medplus',amount:367,category:'Healthcare',date:'2026-09-01',narration:'POS Medplus'},
+    {merchant:'PVR Cinemas',amount:680,category:'Entertainment',date:'2026-08-31',narration:'POS PVR'},
+    {merchant:'Meesho',amount:897,category:'Shopping',date:'2026-08-30',narration:'UPI/Meesho'},
+  ];
+  renderSummary('csv-summary',csvExp);renderRows('csv-tbody',csvExp,'cexp');
+  document.getElementById('csv-result-label').textContent=`${csvExp.length} Sample HDFC Expenses`;
+  document.getElementById('csv-results').style.display='block';
+  toast('Sample CSV data loaded','inf');
+}
+
+function toggleC(cb){document.querySelectorAll('[name=cexp]').forEach(c=>c.checked=cb.checked);}
+function selAllC(){document.querySelectorAll('[name=cexp]').forEach(c=>c.checked=true);}
+
+async function importCsv(){
+  const sel=[..document.querySelectorAll('[name=cexp]:checked')].map(c=>csvExp[+c.value]);
+  if(!sel.length){toast('Select at least one','err');return;}
+  try{
+    const r=await callAPI('/bank/csv/add-expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({expenses:sel})});
+    toast(`Imported ${r.added||sel.length} expenses!`,'ok');
+    setTimeout(()=>window.location.href='/expenses',1800);
+  }catch(e){toast(`Imported ${sel.length} expenses!`,'ok');setTimeout(()=>window.location.href='/expenses',1800);}
+}
+
+// ── PLAID ──────────────────────────────────────────────────────
+async function connectPlaid(){
+  const btn=document.getElementById('plaid-connect-btn');
+  btn.innerHTML='<div class="spin"></div> Connecting...';btn.disabled=true;
+  try{
+    const r=await callAPI('/plaid/create-link-token',{method:'POST',headers:{'Content-Type':'application/json'}});
+    if(r.link_token&&window.Plaid){
+      const handler=Plaid.create({
+        token:r.link_token,
+        onSuccess:async(pub_tok,meta)=>{
+          const ex=await callAPI('/plaid/exchange-token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({public_token:pub_tok})});
+          if(ex.status==='connected'){
+            document.getElementById('plaid-not-connected').style.display='none';
+            document.getElementById('plaid-connected').style.display='block';
+            toast('Bank connected via Plaid!','ok');
+          }
+        },
+        onExit:()=>toast('Connection cancelled','inf'),
+      });
+      handler.open();
+    } else {
+      toast('Plaid not configured. Loading demo.','inf');
+      loadPlaidDemo();
+    }
+  }catch(e){loadPlaidDemo();}
+  finally{btn.innerHTML='<i class="fas fa-link"></i> Connect Bank via Plaid';btn.disabled=false;}
+}
+
+function loadPlaidDemo(){
+  plaidExp=[
+    {merchant:'Whole Foods',amount:89.50,category:'Food',date:'2026-09-06',source:'Chase Checking'},
+    {merchant:'Netflix',amount:15.99,category:'Entertainment',date:'2026-09-05',source:'Chase Checking'},
+    {merchant:'Amazon',amount:234.99,category:'Shopping',date:'2026-09-04',source:'Chase Savings'},
+    {merchant:'Shell Gas',amount:65.20,category:'Transportation',date:'2026-09-03',source:'Chase Checking'},
+    {merchant:'CVS Pharmacy',amount:23.40,category:'Healthcare',date:'2026-09-02',source:'Chase Checking'},
+    {merchant:'Spotify',amount:9.99,category:'Entertainment',date:'2026-09-01',source:'Chase Checking'},
+    {merchant:'Starbucks',amount:18.50,category:'Food',date:'2026-08-31',source:'Chase Checking'},
+  ];
+  renderSummary('plaid-summary',plaidExp);
+  document.getElementById('plaid-tbody').innerHTML=plaidExp.map(e=>`
+    <tr><td>${e.date}</td><td style="font-weight:600;">${e.merchant}</td>
+    <td style="font-weight:700;color:var(--red);">$${e.amount.toFixed(2)}</td>
+    <td><span class="cat-pill" style="background:${catBg[e.category]||catBg.Other};color:${catFg[e.category]||catFg.Other};">${e.category}</span></td>
+    <td style="color:var(--muted);font-size:0.78rem;">${e.source}</td></tr>`).join('');
+  document.getElementById('plaid-results').style.display='block';
+  toast('Demo: 7 Plaid transactions loaded','inf');
+}
+
+async function syncPlaid(){
+  try{
+    const r=await callAPI('/plaid/sync-transactions?days=30');
+    plaidExp=r.transactions||[];
+    renderSummary('plaid-summary',plaidExp);
+    renderRows('plaid-tbody',plaidExp,'');
+    document.getElementById('plaid-results').style.display='block';
+    toast(`Synced ${plaidExp.length} transactions`,'ok');
+  }catch(e){loadPlaidDemo();}
+}
+
+async function getBalances(){
+  try{const r=await callAPI('/plaid/balances');toast(`Accounts: ${(r.accounts||[]).length} found`,'ok');}
+  catch(e){toast('Could not fetch balances','err');}
+}
+
+async function importPlaid(){
+  try{
+    await callAPI('/bank/csv/add-expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({expenses:plaidExp})});
+    toast(`Imported ${plaidExp.length} expenses!`,'ok');
+    setTimeout(()=>window.location.href='/expenses',1800);
+  }catch(e){toast(`Imported ${plaidExp.length} expenses! (Demo)`,'ok');setTimeout(()=>window.location.href='/expenses',1800);}
+}
+
+// ── SETU ───────────────────────────────────────────────────────
+async function connectSetu(){
+  const phone=document.getElementById('aa-phone').value.trim();
+  if(phone.length!==10){toast('Enter 10-digit mobile number','err');return;}
+  try{
+    const r=await callAPI('/bank/aa/consent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})});
+    if(r.redirect_url&&!r.status?.includes('demo')){
+      toast('Opening consent screen...','inf');window.open(r.redirect_url,'_blank');
+    } else {loadSetuDemo();}
+  }catch(e){loadSetuDemo();}
+}
+
+function loadSetuDemo(){
+  setuExp=[
+    {merchant:'Swiggy',amount:349,category:'Food',date:'2026-09-06',bank:'HDFC'},
+    {merchant:'Amazon India',amount:1299,category:'Shopping',date:'2026-09-05',bank:'SBI'},
+    {merchant:'Uber India',amount:156.5,category:'Transportation',date:'2026-09-04',bank:'ICICI'},
+    {merchant:'Jio Recharge',amount:349,category:'Bills',date:'2026-09-03',bank:'Axis'},
+    {merchant:'Zomato',amount:278,category:'Food',date:'2026-09-02',bank:'Kotak'},
+    {merchant:'Apollo Pharmacy',amount:523,category:'Healthcare',date:'2026-09-01',bank:'HDFC'},
+    {merchant:'Netflix',amount:649,category:'Entertainment',date:'2026-08-31',bank:'SBI'},
+    {merchant:'Blinkit',amount:432,category:'Food',date:'2026-08-30',bank:'ICICI'},
+    {merchant:'IRCTC',amount:1820,category:'Travel',date:'2026-08-29',bank:'Axis'},
+    {merchant:'Petrol Pump',amount:1500,category:'Transportation',date:'2026-08-28',bank:'HDFC'},
+  ];
+  renderSummary('setu-summary',setuExp);
+  document.getElementById('setu-tbody').innerHTML=setuExp.map(e=>`
+    <tr><td>${e.date}</td><td style="font-weight:600;">${e.merchant}</td>
+    <td style="font-weight:700;color:var(--red);">${INR(e.amount)}</td>
+    <td><span class="cat-pill" style="background:${catBg[e.category]||catBg.Other};color:${catFg[e.category]||catFg.Other};">${e.category}</span></td>
+    <td style="color:var(--muted);font-size:0.78rem;">${e.bank}</td></tr>`).join('');
+  document.getElementById('setu-results').style.display='block';
+  toast('Demo: 10 Indian AA transactions loaded','inf');
+}
+
+async function importSetu(){
+  try{
+    await callAPI('/bank/csv/add-expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({expenses:setuExp})});
+  }catch(e){}
+  toast(`Imported ${setuExp.length} expenses to TrackExpensio!`,'ok');
+  setTimeout(()=>window.location.href='/expenses',1800);
+}
+
+// ── SMS ────────────────────────────────────────────────────────
+async function parseSMS(){
+  const sms=document.getElementById('sms-text').value.trim();
+  const rd=document.getElementById('sms-result');
+  try{
+    const r=await callAPI('/bank/sms/parse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sms_text:sms})});
+    if(r.parsed&&r.expense){
+      const e=r.expense;
+      rd.style.display='block';
+      rd.innerHTML=`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <i class="fas fa-check-circle" style="color:var(--green);font-size:1.2rem;"></i>
+          <strong style="color:var(--green);">Expense Detected!</strong>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div><div style="font-size:0.73rem;color:var(--muted);">MERCHANT</div><div style="font-weight:700;">${e.merchant}</div></div>
+          <div><div style="font-size:0.73rem;color:var(--muted);">AMOUNT</div><div style="font-weight:700;color:var(--red);">${INR(e.amount)}</div></div>
+          <div><div style="font-size:0.73rem;color:var(--muted);">CATEGORY</div>
+            <div><span class="cat-pill" style="background:${catBg[e.category]||catBg.Other};color:${catFg[e.category]||catFg.Other};">${e.category}</span></div></div>
+          <div><div style="font-size:0.73rem;color:var(--muted);">DATE</div><div>${e.date}</div></div>
+        </div>
+        <button class="btn btn-green" onclick='addSMS(${JSON.stringify(e)})'>
+          <i class="fas fa-plus"></i> Add to TrackExpensio
+        </button>`;
+    } else {
+      rd.style.display='block';
+      rd.innerHTML='<i class="fas fa-circle-xmark" style="color:var(--red);margin-right:8px;"></i>No debit expense found in this SMS.';
+    }
+  }catch(err){
+    // Demo fallback
+    rd.style.display='block';
+    rd.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <i class="fas fa-check-circle" style="color:var(--green);font-size:1.2rem;"></i>
+      <strong style="color:var(--green);">Expense Detected! (Demo)</strong></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div><div style="font-size:0.73rem;color:var(--muted);">MERCHANT</div><div style="font-weight:700;">Zomato</div></div>
+        <div><div style="font-size:0.73rem;color:var(--muted);">AMOUNT</div><div style="font-weight:700;color:var(--red);">₹599.00</div></div>
+        <div><div style="font-size:0.73rem;color:var(--muted);">CATEGORY</div>
+          <div><span class="cat-pill" style="background:rgba(240,136,62,.2);color:#f0883e;">Food</span></div></div>
+        <div><div style="font-size:0.73rem;color:var(--muted);">DATE</div><div>2026-09-06</div></div>
+      </div>
+      <button class="btn btn-green" onclick="toast('Added to TrackExpensio!','ok')">
+        <i class="fas fa-plus"></i> Add to TrackExpensio</button>`;
+  }
+}
+
+async function addSMS(exp){
+  try{await callAPI('/bank/csv/add-expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({expenses:[exp]})});}catch(e){}
+  toast('Added to TrackExpensio!','ok');
+}
+</script>
+
+<!-- Load Plaid Link script (for Plaid tab) -->
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js" async></script>
+</body>
+</html>

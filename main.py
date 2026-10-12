@@ -22,7 +22,7 @@ from typing import Optional, Dict, Any
 import pandas as pd
 import yfinance as yf
 from fastmcp import FastMCP
-from fastmcp.tools.tool import FunctionTool
+
 
 from auth import UserAuth
 from database import Database
@@ -87,12 +87,7 @@ async def _log_audit(
         pass
 
 
-# FastMCP's FunctionTool doesn't expose __call__ by default; patch it so we can use the
-# decorated functions like regular coroutines throughout the codebase (e.g., quick_add_expense()).
-if not hasattr(FunctionTool, "__call__") or not callable(FunctionTool.__dict__.get("__call__", None)):
-    def _functiontool_call(self, *args, **kwargs):  # type: ignore
-        return self.fn(*args, **kwargs)
-    FunctionTool.__call__ = _functiontool_call  # type: ignore[attr-defined]
+
 
 # Helper function to get user_id from api_key or session_id
 async def _get_user_id(api_key: str = None, session_id: str = None) -> tuple[Optional[str], Optional[str]]:

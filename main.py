@@ -3311,8 +3311,8 @@ async def get_help():
         ]
     }
 
-# Expose ordinary async functions to FastAPI
-# while keeping tools registered with FastMCP.
+   # Expose ordinary async functions to FastAPI while keeping
+# the tools already registered with the FastMCP server.
 for _name, _obj in list(globals().items()):
     _fn = getattr(_obj, "fn", None)
     if callable(_fn) and _name != "mcp":
@@ -3328,14 +3328,6 @@ TOOL_REGISTRY = {
     "summarize": summarize,
     "ai_insights": ai_insights,
     "quick_add_expense": quick_add_expense,
-    # Keep all your remaining existing entries here.
-}
-    # Expose ordinary async functions to FastAPI while keeping
-# the tools already registered with the FastMCP server.
-for _name, _obj in list(globals().items()):
-    _fn = getattr(_obj, "fn", None)
-    if callable(_fn) and _name != "mcp":
-        globals()[_name] = _fn
     "register_user": register_user,
     "login_user": login_user,
     "get_user_info": get_user_info,

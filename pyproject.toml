@@ -8,8 +8,9 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "python-dotenv",
-    "jinja2>=3.1.0",
     "google-auth-oauthlib",
+    "google-api-python-client",
+    "Jinja2",
 ]
 
 [tool.vercel]

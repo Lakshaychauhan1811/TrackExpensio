@@ -1,12 +1,10 @@
 
+
 [project]
 name = "track-expensio"
 version = "0.1.0"
 requires-python = ">=3.11"
-
-
 dependencies = [
-    "fastmcp>=0.1.0",
     "fastapi>=0.100.0",
     "uvicorn>=0.27.0",
     "motor>=3.3.0",
@@ -25,17 +23,17 @@ dependencies = [
     "pydantic>=2.7.4",
     "typing-extensions>=1.14.0",
     "yfinance>=0.2.50",
-    "plotly>=5.18.0",
-    "scikit-learn>=1.3.0",
-    "numpy>=1.24.0",
     "requests>=2.31.0",
-    "pypdf>=4.0.0",
     "bcrypt>=4.0.0",
     "pandas>=2.0.0",
+    "numpy>=1.24.0",
     "openai>=1.0.0",
-    "reportlab>=4.0.0",
     "jinja2>=3.1.0",
 ]
+
+[tool.vercel]
+entrypoint = "api:app"
+
 
 
 [tool.vercel]

@@ -1,0 +1,674 @@
+/* ============================================================
+   TRACKEXPENSIO — COMPLETE MOBILE RESPONSIVE FIX
+   ============================================================
+   ADD THIS to your existing expense_tracker.css file
+   OR create a new file: static/css/mobile_fix.css
+   Then add to your HTML <head>:
+   <link rel="stylesheet" href="/static/css/mobile_fix.css">
+   ============================================================ */
+
+/* ── RESET & BASE ────────────────────────────────────────────*/
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+/* ── HEADER / NAVBAR ─────────────────────────────────────────*/
+.navbar,
+header,
+.header,
+nav.top-nav,
+.top-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 8px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Logo — prevent overflow */
+.navbar-brand,
+.logo,
+.brand,
+h1.logo {
+  font-size: clamp(1rem, 4vw, 1.4rem) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 55%;
+  flex-shrink: 1;
+}
+
+/* Header right buttons */
+.navbar-actions,
+.header-actions,
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.navbar-actions button,
+.header-actions button,
+.nav-right button {
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+/* User profile pill */
+.user-pill,
+.user-dropdown,
+.profile-btn {
+  max-width: 140px;
+  overflow: hidden;
+}
+
+.user-pill span,
+.user-name {
+  display: none; /* hide name on small screens */
+}
+
+/* ── NAVIGATION TABS ─────────────────────────────────────────*/
+.nav-tabs,
+.tab-bar,
+.main-nav,
+.sub-nav {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 0 4px;
+  width: 100%;
+}
+
+.nav-tabs::-webkit-scrollbar,
+.tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-tabs a,
+.nav-tabs button,
+.tab-bar .tab,
+.tab-item {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  text-decoration: none;
+}
+
+/* ── SIDEBAR → BOTTOM NAV ON MOBILE ─────────────────────────*/
+.sidebar {
+  display: none; /* hide desktop sidebar on mobile */
+}
+
+/* Bottom navigation for mobile */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: #161b22;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.mobile-bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.65rem;
+  color: #8b949e;
+  text-decoration: none;
+  padding: 4px 8px;
+  min-width: 48px;
+}
+
+.mobile-bottom-nav a.active {
+  color: #58a6ff;
+}
+
+.mobile-bottom-nav a i {
+  font-size: 1.1rem;
+}
+
+/* ── MAIN CONTENT ─────────────────────────────────────────────*/
+.main-content,
+.content,
+.page-content,
+main {
+  padding: 16px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ── HERO SECTION ─────────────────────────────────────────────*/
+.hero,
+.hero-section,
+.landing-hero {
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.hero h1,
+.hero-title {
+  font-size: clamp(1.6rem, 6vw, 3rem) !important;
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+
+.hero p,
+.hero-subtitle {
+  font-size: clamp(0.85rem, 3vw, 1.1rem);
+  line-height: 1.5;
+}
+
+/* Feature cards in hero */
+.hero-features,
+.feature-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.feature-item p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+/* ── STATS / SUMMARY CARDS ───────────────────────────────────*/
+.stats-grid,
+.summary-grid,
+.cards-row,
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stat-card,
+.summary-card,
+.info-card {
+  padding: 14px 12px;
+  border-radius: 10px;
+  min-height: 80px;
+}
+
+.stat-card .value,
+.stat-value {
+  font-size: clamp(1.1rem, 4vw, 1.6rem) !important;
+}
+
+.stat-card .label,
+.stat-label {
+  font-size: 0.72rem;
+}
+
+/* ── BUTTONS ──────────────────────────────────────────────────*/
+.btn,
+button.primary,
+.action-btn {
+  padding: 10px 16px;
+  font-size: 0.88rem;
+  border-radius: 8px;
+  min-height: 42px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Full-width buttons on mobile */
+.btn-block-mobile {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Button groups */
+.btn-group,
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── FORMS ────────────────────────────────────────────────────*/
+input,
+select,
+textarea {
+  font-size: 16px !important; /* prevents iOS zoom */
+  border-radius: 8px;
+  padding: 10px 12px;
+  width: 100%;
+  -webkit-appearance: none;
+}
+
+.form-group,
+.input-group {
+  margin-bottom: 14px;
+}
+
+.form-row,
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+/* ── TABLES → CARDS ON MOBILE ────────────────────────────────*/
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+}
+
+table {
+  min-width: 500px; /* allows horizontal scroll */
+  width: 100%;
+}
+
+/* ── CHAT INTERFACE ──────────────────────────────────────────*/
+.chat-container,
+.chat-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  height: calc(100dvh - 120px);
+}
+
+.chat-messages,
+.messages-list {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-message {
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.chat-message.user {
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-message.assistant,
+.chat-message.bot {
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-input-area,
+.message-input-wrapper {
+  padding: 10px 12px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  position: sticky;
+  bottom: 0;
+  background: inherit;
+}
+
+.chat-input,
+#message-input,
+.message-input {
+  flex: 1;
+  min-height: 42px;
+  max-height: 120px;
+  resize: none;
+  font-size: 16px !important;
+  border-radius: 20px;
+  padding: 10px 14px;
+}
+
+/* ── MODAL / DRAWER ──────────────────────────────────────────*/
+.modal,
+.drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end; /* slides up from bottom on mobile */
+  justify-content: center;
+}
+
+.modal-content,
+.drawer-content {
+  width: 100%;
+  max-height: 90vh;
+  border-radius: 20px 20px 0 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 16px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── TRANSACTION LIST ────────────────────────────────────────*/
+.transaction-item,
+.expense-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.transaction-item .merchant,
+.expense-item .merchant {
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.transaction-item .amount,
+.expense-item .amount {
+  margin-left: auto;
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── CHART CONTAINERS ────────────────────────────────────────*/
+.chart-wrapper,
+.chart-container,
+#chart {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  touch-action: pan-x pan-y;
+}
+
+/* ── QUICK PICK CHIPS ────────────────────────────────────────*/
+.quick-picks,
+.chip-list,
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.chip,
+.tag {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* ── FLOATING ACTION BUTTON ──────────────────────────────────*/
+.fab,
+.floating-btn {
+  position: fixed;
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  right: 20px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  z-index: 100;
+  cursor: pointer;
+  border: none;
+}
+
+/* ── SAFE AREA (iPhone notch etc) ───────────────────────────*/
+.safe-top    { padding-top:    env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* ============================================================
+   BREAKPOINTS
+   ============================================================ */
+
+/* ── MOBILE: up to 640px ────────────────────────────────────*/
+@media (max-width: 640px) {
+
+  /* Hide desktop sidebar */
+  .sidebar,
+  .left-sidebar,
+  .side-nav {
+    display: none !important;
+  }
+
+  /* Show mobile bottom nav */
+  .mobile-bottom-nav {
+    display: flex !important;
+  }
+
+  /* Add padding so content doesnt hide behind bottom nav */
+  .main-content,
+  .content,
+  main {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Full width layout */
+  .page-wrapper,
+  .app-layout,
+  .main-layout {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  /* Stack grid to single column */
+  .grid-2,
+  .grid-3,
+  .grid-4,
+  .col-2,
+  .col-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* 2-column for small stats */
+  .stats-grid,
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Logo size */
+  .logo, h1.logo, .navbar-brand {
+    font-size: 1rem !important;
+    letter-spacing: -0.5px;
+  }
+
+  /* Hide text, show only icon in header buttons */
+  .btn-text-mobile-hide {
+    display: none;
+  }
+
+  /* User name hidden */
+  .user-name, .username {
+    display: none !important;
+  }
+
+  /* Cards full width */
+  .card {
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  /* Section headers */
+  h2.section-title {
+    font-size: 1.2rem;
+  }
+
+  /* Table scrollable */
+  .tbl-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Buttons */
+  .btn {
+    font-size: 0.85rem;
+    padding: 9px 14px;
+  }
+
+  /* Feature card text */
+  .feature-card p {
+    font-size: 0.82rem;
+  }
+
+  /* Tabs scroll horizontally */
+  .tabs, .nav-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Hero */
+  .hero-cta-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .hero-cta-buttons .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── TABLET: 641px to 1024px ────────────────────────────────*/
+@media (min-width: 641px) and (max-width: 1024px) {
+
+  .sidebar {
+    width: 200px !important;
+  }
+
+  .grid-3, .grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  .hero h1 {
+    font-size: 2rem !important;
+  }
+
+  .main-content {
+    padding: 20px;
+  }
+}
+
+/* ── DESKTOP: 1025px+ ────────────────────────────────────────*/
+@media (min-width: 1025px) {
+
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+
+  .sidebar {
+    display: block !important;
+    width: 240px;
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+  }
+
+  .app-layout {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .main-content {
+    flex: 1;
+    padding: 28px;
+    overflow-y: auto;
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  .grid-4 {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+
+  /* Show user name on desktop */
+  .user-name, .username {
+    display: inline !important;
+  }
+}
+
+/* ── DARK MODE SAFE ──────────────────────────────────────────*/
+@media (prefers-color-scheme: dark) {
+  .modal-content,
+  .drawer-content {
+    background: #161b22;
+    color: #e6edf3;
+  }
+}
+
+/* ── ANIMATIONS (respect reduced motion) ────────────────────*/
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

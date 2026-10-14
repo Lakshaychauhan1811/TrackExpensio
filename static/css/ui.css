@@ -810,3 +810,167 @@ iframe {
     }
 }
 
+/* TrackExpensio: targeted mobile layout fix */
+@media screen and (max-width: 640px) {
+    html,
+    body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .navbar {
+        width: 100%;
+        padding: 10px 12px;
+    }
+
+    .nav-container {
+        width: 100%;
+        min-width: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .nav-brand {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .brand-title {
+        font-size: clamp(17px, 5vw, 22px);
+        overflow-wrap: anywhere;
+    }
+
+    .nav-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        max-width: 100%;
+    }
+
+    .nav-btn {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+
+    .main-container {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .sidebar {
+        display: flex;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        gap: 6px;
+    }
+
+    .sidebar-section {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+    }
+
+    .sidebar-section h3 {
+        display: none;
+    }
+
+    .sidebar-btn {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        padding: 10px 12px;
+    }
+
+    .content-area {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        padding: 16px 12px;
+    }
+
+    .content-section {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .section-header {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .section-header h1 {
+        font-size: clamp(22px, 6vw, 30px);
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+    }
+
+    .model-hero,
+    .stats-grid,
+    .action-grid,
+    .intelligence-row,
+    .market-widget,
+    .secure-sync-card,
+    .chat-container {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .chat-container {
+        height: auto;
+        min-height: 65dvh;
+    }
+
+    .chat-messages {
+        min-width: 0;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+    }
+
+    .message-content {
+        min-width: 0;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+    }
+
+    .chat-input-container {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 6px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .chat-input {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .chat-input-container button {
+        flex: 0 0 auto;
+    }
+
+    .modal,
+    .modal-content {
+        max-width: 100%;
+    }
+
+    .modal-content {
+        width: calc(100% - 24px);
+        max-height: 85dvh;
+        overflow-y: auto;
+    }
+}
+

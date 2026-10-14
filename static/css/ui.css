@@ -377,15 +377,54 @@ table {
   padding: 10px 14px;
 }
 
-/* ── MODAL / DRAWER ──────────────────────────────────────────*/
+
+/* ── MODAL / DRAWER ───────────────────────────── */
 .modal,
 .drawer {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: flex;
-  align-items: flex-end; /* slides up from bottom on mobile */
-  justify-content: center;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 12px;
+}
+
+.modal-content,
+.drawer-content {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 20px 16px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    border-radius: 16px;
+}
+
+/* Mobile: show dialogs as bottom sheets when opened */
+@media screen and (max-width: 640px) {
+    .modal[style*="display: flex"],
+    .modal[style*="display:flex"],
+    .drawer[style*="display: flex"],
+    .drawer[style*="display:flex"] {
+        align-items: flex-end;
+        justify-content: center;
+    }
+
+    .modal-content,
+    .drawer-content {
+        width: 100%;
+        max-width: 480px;
+        max-height: 85dvh;
+        overflow-y: auto;
+        border-radius: 16px 16px 0 0;
+        padding: 20px 16px;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    }
 }
 
 .modal-content,

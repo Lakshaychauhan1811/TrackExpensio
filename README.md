@@ -182,6 +182,9 @@ python mcp_server.py
 
 ## Deployment
 
+For Vercel and Render, set `SESSION_SECRET_KEY` to a long random value and `COOKIE_SECURE=true` in each platform’s environment settings. Add both `/auth/google/callback` and `/bank/gmail/callback` to the authorized redirect URIs in Google Cloud when using both login flows. Configure secrets separately on each platform; do not commit `.env`.
+
+
 Render one-click deploy via `render.yaml`. Set `MONGODB_URI`, `GROQ_API_KEY`, and other secrets in the Render dashboard — never commit them.
 
 ---
@@ -189,3 +192,4 @@ Render one-click deploy via `render.yaml`. Set `MONGODB_URI`, `GROQ_API_KEY`, an
 ## License
 
 MIT
+

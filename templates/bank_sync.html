@@ -631,21 +631,40 @@ function renderSummary(id, exps){
     <div class="sum-card"><div class="sum-lbl">Categories</div><div class="sum-val" style="color:var(--green);">${Object.keys(byc).length}</div></div>`;
 }
 
-function renderRows(tbodyId, exps, cbName){
-  document.getElementById(tbodyId).innerHTML=exps.map((e,i)=>`
-    <tr>
-      ${cbName?`<td><input type="checkbox" name="${cbName}" value="${i}" checked></td>`:''}
-      <td>${e.date}</td>
-      <td style="font-weight:600;">${e.merchant}</td>
-      <td style="font-weight:700;color:var(--red);">${INR(e.amount)}</td>
-      <td><span class="cat-pill" style="background:${catBg[e.category]||catBg.Other};color:${catFg[e.category]||catFg.Other};">${e.category}</span></td>
-      <td style="color:var(--muted);font-size:0.78rem;">${e.bank||e.narration||e.source||''}</td>
-    </tr>`).join('');
+function escapeHTML(value){
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
 }
 
-async function callAPI(url,opts){
-  try{ return await (await fetch(url,opts)).json(); }
-  catch(e){ return {error:e.message}; }
+function renderRows(tbodyId, exps, cbName){
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  tbody.innerHTML=exps.map((e,i)=>{
+    const category = String(e.category || 'Other');
+    const bg = catBg[category] || catBg.Other;
+    const fg = catFg[category] || catFg.Other;
+    return `
+    <tr>
+      ${cbName?`<td><input type="checkbox" name="${cbName}" value="${i}" checked></td>`:''}
+      <td>${escapeHTML(e.date)}</td>
+      <td style="font-weight:600;">${escapeHTML(e.merchant)}</td>
+      <td style="font-weight:700;color:var(--red);">${INR(e.amount)}</td>
+      <td><span class="cat-pill" style="background:${bg};color:${fg};">${escapeHTML(category)}</span></td>
+      <td style="color:var(--muted);font-size:0.78rem;">${escapeHTML(e.bank||e.narration||e.source||'')}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function callAPI(url,opts={}){
+  const response = await fetch(url,opts);
+  let data = {};
+  try { data = await response.json(); } catch (_) {}
+  if (!response.ok) {
+    const message = data.detail || data.message || data.error || `Request failed (${response.status})`;
+    throw new Error(typeof message === 'string' ? message : JSON.stringify(message));
+  }
+  return data;
 }
 
 // ── GMAIL ─────────────────────────────────────────────────────
@@ -699,7 +718,7 @@ function toggleG(cb){document.querySelectorAll('[name=gexp]').forEach(c=>c.check
 function selAllG(){document.querySelectorAll('[name=gexp]').forEach(c=>c.checked=true);}
 
 async function importGmail(){
-  const sel=[..document.querySelectorAll('[name=gexp]:checked')].map(c=>gExp[+c.value]);
+  const sel=[...document.querySelectorAll('[name=gexp]:checked')].map(c=>gExp[+c.value]);
   if(!sel.length){toast('Select at least one','err');return;}
   const btn=document.getElementById('g-import-btn');
   btn.innerHTML='<div class="spin"></div> Importing...';btn.disabled=true;
@@ -775,7 +794,7 @@ function toggleC(cb){document.querySelectorAll('[name=cexp]').forEach(c=>c.check
 function selAllC(){document.querySelectorAll('[name=cexp]').forEach(c=>c.checked=true);}
 
 async function importCsv(){
-  const sel=[..document.querySelectorAll('[name=cexp]:checked')].map(c=>csvExp[+c.value]);
+  const sel=[...document.querySelectorAll('[name=cexp]:checked')].map(c=>csvExp[+c.value]);
   if(!sel.length){toast('Select at least one','err');return;}
   try{
     const r=await callAPI('/bank/csv/add-expenses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({expenses:sel})});

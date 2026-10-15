@@ -31,6 +31,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
+from pathlib import Path
 import io
 import tempfile
 from google_auth_oauthlib.flow import Flow
@@ -188,6 +190,25 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(title="TrackExpensio API", lifespan=lifespan)
+
+# SessionMiddleware is required by legacy bank-sync OAuth routes that access
+# request.session. Use a persistent secret in deployed environments.
+_SESSION_SECRET = os.getenv("SESSION_SECRET_KEY") or os.getenv("SECRET_KEY")
+if not _SESSION_SECRET:
+    # Never ship a predictable signing key. Set SESSION_SECRET_KEY in production
+    # so sessions remain valid across serverless instances and restarts.
+    _SESSION_SECRET = secrets.token_urlsafe(32)
+    if os.getenv("PORT") or os.getenv("VERCEL") or os.getenv("RENDER"):
+        print("WARNING: Set SESSION_SECRET_KEY in deployment environment; sessions will not persist across instances until configured.")
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=_SESSION_SECRET,
+    same_site="lax",
+    https_only=(
+        os.getenv("COOKIE_SECURE", "true" if (os.getenv("VERCEL") or os.getenv("RENDER")) else "false")
+        .strip().lower() in {"1", "true", "yes"}
+    ),
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
@@ -196,9 +217,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 setup_bank_routes(app)
-# Mount static files and templates
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+
+# Resolve assets relative to this file, not the process working directory.
+BASE_DIR = Path(__file__).resolve().parent
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 def _google_flow(request: Request | None = None, code_verifier: str | None = None) -> Flow:
@@ -1664,6 +1687,9 @@ async def google_callback(request: Request, code: str = None, state: str = None,
     session_id = stored.get("session_id")
     if session_id:
         await session_manager.link_session_to_google(session_id, google_user_id)
+        request.session['session_id'] = session_id
+    request.session['user_id'] = google_user_id
+    request.session['user_name'] = profile.get('name') or profile.get('given_name') or 'User'
     
     await mongo_manager.upsert_google_profile(google_user_id, profile, cred_payload)
 
@@ -2048,3 +2074,4 @@ if __name__ == "__main__":
     print(f"💬 Chatbot available at: http://{host}:{port}/chat")
     print(f"\n✅ Server running on {host}:{port}\n")
     uvicorn.run(app, host=host, port=port)
+

@@ -14,9 +14,11 @@ OR copy-paste each endpoint directly into api.py
 import os, re, base64, logging, csv, io, json
 from datetime import datetime, timedelta
 from typing import Optional, List
+from pathlib import Path
 from fastapi import FastAPI, APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from pydantic import BaseModel
+from services.storage import MongoManager
 
 logger = logging.getLogger(__name__)
 
@@ -141,23 +143,67 @@ def _safe_b64(data: str) -> str:
 
 
 def _get_user(request: Request) -> str:
-    return (request.session.get('session_id')
-            or request.session.get('user_id')
-            or 'guest')
+    user_id = request.session.get('session_id') or request.session.get('user_id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail='Please sign in with Google before using Bank Sync.')
+    return str(user_id)
+
+
+async def _read_bank_state(user_id: str, key: str):
+    # Persist OAuth/access tokens in MongoDB so serverless instances can share them.
+    cache = {'gmail_token': GMAIL_TOKENS, 'plaid_token': PLAID_TOKENS, 'aa_consent': AA_CONSENTS}[key]
+    if user_id in cache:
+        return cache[user_id]
+    try:
+        mongo = MongoManager()
+        doc = await mongo.google_collection.find_one({'user_id': user_id}, {'bank_sync_state': 1})
+        value = ((doc or {}).get('bank_sync_state') or {}).get(key)
+        if value is not None:
+            cache[user_id] = value
+        return value
+    except Exception as exc:
+        logger.warning('Could not read persisted bank-sync state (%s): %s', key, exc)
+        return cache.get(user_id)
+
+
+async def _write_bank_state(user_id: str, key: str, value):
+    cache = {'gmail_token': GMAIL_TOKENS, 'plaid_token': PLAID_TOKENS, 'aa_consent': AA_CONSENTS}[key]
+    cache[user_id] = value
+    try:
+        mongo = MongoManager()
+        await mongo.google_collection.update_one(
+            {'user_id': user_id},
+            {'$set': {f'bank_sync_state.{key}': value, 'user_id': user_id}},
+            upsert=True,
+        )
+    except Exception as exc:
+        logger.warning('Could not persist bank-sync state (%s): %s', key, exc)
+
+
+async def _delete_bank_state(user_id: str, key: str):
+    cache = {'gmail_token': GMAIL_TOKENS, 'plaid_token': PLAID_TOKENS, 'aa_consent': AA_CONSENTS}[key]
+    cache.pop(user_id, None)
+    try:
+        mongo = MongoManager()
+        await mongo.google_collection.update_one(
+            {'user_id': user_id}, {'$unset': {f'bank_sync_state.{key}': ''}}
+        )
+    except Exception as exc:
+        logger.warning('Could not delete persisted bank-sync state (%s): %s', key, exc)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # GMAIL — AUTH ENDPOINTS
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _gmail_service(user_id: str):
-    """Build authenticated Gmail service."""
+async def _gmail_service(user_id: str):
+    """Build Gmail service using persisted credentials."""
     try:
         from google.oauth2.credentials import Credentials
         from google.auth.transport.requests import Request
         from googleapiclient.discovery import build
 
-        data = GMAIL_TOKENS.get(user_id)
+        data = await _read_bank_state(user_id, 'gmail_token')
         if not data:
             raise ValueError('Gmail not connected')
 
@@ -171,7 +217,8 @@ def _gmail_service(user_id: str):
         )
         if creds.expired and creds.refresh_token:
             creds.refresh(Request())
-            GMAIL_TOKENS[user_id]['token'] = creds.token
+            data['token'] = creds.token
+            await _write_bank_state(user_id, 'gmail_token', data)
 
         return build('gmail','v1',credentials=creds)
     except ImportError:
@@ -329,7 +376,7 @@ def setup_bank_routes(app: FastAPI):
     async def bank_sync_page(request: Request):
         """Serve the Bank Sync HTML page."""
         from fastapi.templating import Jinja2Templates
-        templates = Jinja2Templates(directory='templates')
+        templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / 'templates'))
         try:
             return templates.TemplateResponse('bank_sync.html', {
                 'request': request,
@@ -338,7 +385,7 @@ def setup_bank_routes(app: FastAPI):
         except Exception:
             # Fallback: read file directly
             try:
-                with open('templates/bank_sync.html') as f:
+                with open(Path(__file__).resolve().parent / 'templates' / 'bank_sync.html', encoding='utf-8') as f:
                     return HTMLResponse(f.read())
             except FileNotFoundError:
                 return HTMLResponse('<h2>Bank Sync page not found. Copy bank_sync_frontend.html to templates/bank_sync.html</h2>')
@@ -350,104 +397,107 @@ def setup_bank_routes(app: FastAPI):
 
     @app.get('/bank/gmail/connect')
     async def gmail_connect(request: Request):
-        """Redirect user to Google OAuth."""
-        user_id      = _get_user(request)
+        """Start Gmail OAuth using deployment environment credentials."""
+        user_id = _get_user(request)
         redirect_uri = str(request.base_url).rstrip('/') + '/bank/gmail/callback'
-
+        client_id = os.getenv('GOOGLE_CLIENT_ID', '').strip()
+        client_secret = os.getenv('GOOGLE_CLIENT_SECRET', '').strip()
+        if not client_id or not client_secret:
+            return HTMLResponse(
+                '<h2>Gmail setup required</h2><p>Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in the deployment environment, then add this redirect URI in Google Cloud: '
+                + redirect_uri + '</p><a href="/bank-sync">Back to Bank Sync</a>',
+                status_code=503,
+            )
         try:
             from google_auth_oauthlib.flow import Flow
-            if not os.path.exists('credentials.json'):
-                raise FileNotFoundError('credentials.json not found')
-
-            flow = Flow.from_client_secrets_file(
-                'credentials.json',
+            config = {'web': {
+                'client_id': client_id,
+                'client_secret': client_secret,
+                'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
+                'token_uri': 'https://oauth2.googleapis.com/token',
+                'redirect_uris': [redirect_uri],
+            }}
+            flow = Flow.from_client_config(
+                config,
                 scopes=['https://www.googleapis.com/auth/gmail.readonly'],
                 redirect_uri=redirect_uri,
             )
+            state_token = secrets.token_urlsafe(32)
+            request.session['bank_gmail_oauth_state'] = state_token
+            request.session['bank_gmail_oauth_user'] = user_id
             url, _ = flow.authorization_url(
                 access_type='offline',
-                state=user_id,
+                state=state_token,
                 prompt='consent',
                 include_granted_scopes='true',
             )
             return RedirectResponse(url=url)
-
-        except FileNotFoundError:
-            # Guide user to set up credentials
-            return HTMLResponse("""
-            <html><body style="font-family:Arial;padding:40px;background:#0d1117;color:#e6edf3;">
-            <h2 style="color:#58a6ff;">Gmail Setup Required</h2>
-            <p>To connect Gmail, you need a Google Cloud credentials file.</p>
-            <ol style="line-height:2.2;">
-              <li>Go to <a href="https://console.cloud.google.com" target="_blank" style="color:#58a6ff;">console.cloud.google.com</a></li>
-              <li>Create a project → Enable <strong>Gmail API</strong></li>
-              <li>OAuth Consent Screen → Add scope: <code>gmail.readonly</code></li>
-              <li>Create OAuth 2.0 credentials (Web Application)</li>
-              <li>Add redirect URI: <code>http://127.0.0.1:8080/bank/gmail/callback</code></li>
-              <li>Download <strong>credentials.json</strong> → place in project root</li>
-              <li>Restart the server and try again</li>
-            </ol>
-            <a href="/bank-sync" style="color:#58a6ff;">← Back to Bank Sync</a>
-            </body></html>""")
-
         except ImportError:
-            raise HTTPException(503, detail='Install: pip install google-auth google-auth-oauthlib google-api-python-client')
+            raise HTTPException(503, detail='Install google-auth-oauthlib and google-api-python-client.')
 
 
     @app.get('/bank/gmail/callback')
     async def gmail_callback(request: Request, code: str = '', state: str = '', error: str = ''):
-        """Handle Google OAuth callback."""
+        """Validate OAuth state and save Gmail credentials persistently."""
         if error:
-            return RedirectResponse(url=f'/bank-sync?error=gmail_{error}')
+            return RedirectResponse(url='/bank-sync?error=gmail_authorization')
+        expected_state = request.session.pop('bank_gmail_oauth_state', None)
+        user_id = request.session.pop('bank_gmail_oauth_user', None)
+        if not code or not state or not expected_state or not secrets.compare_digest(state, expected_state) or not user_id:
+            raise HTTPException(status_code=400, detail='Invalid or expired Gmail OAuth state. Please reconnect Gmail.')
 
-        user_id      = state or _get_user(request)
         redirect_uri = str(request.base_url).rstrip('/') + '/bank/gmail/callback'
-
+        client_id = os.getenv('GOOGLE_CLIENT_ID', '').strip()
+        client_secret = os.getenv('GOOGLE_CLIENT_SECRET', '').strip()
+        if not client_id or not client_secret:
+            raise HTTPException(status_code=503, detail='Google OAuth credentials are not configured.')
         try:
             from google_auth_oauthlib.flow import Flow
-            flow = Flow.from_client_secrets_file(
-                'credentials.json',
+            config = {'web': {
+                'client_id': client_id,
+                'client_secret': client_secret,
+                'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
+                'token_uri': 'https://oauth2.googleapis.com/token',
+                'redirect_uris': [redirect_uri],
+            }}
+            flow = Flow.from_client_config(
+                config,
                 scopes=['https://www.googleapis.com/auth/gmail.readonly'],
                 redirect_uri=redirect_uri,
             )
             flow.fetch_token(code=code)
             creds = flow.credentials
-
-            GMAIL_TOKENS[user_id] = {
-                'token':         creds.token,
+            token_data = {
+                'token': creds.token,
                 'refresh_token': creds.refresh_token,
-                'token_uri':     creds.token_uri,
-                'client_id':     creds.client_id,
+                'token_uri': creds.token_uri,
+                'client_id': creds.client_id,
                 'client_secret': creds.client_secret,
-                'scopes':        list(creds.scopes or []),
-                'email':         '',  # filled on first use
+                'scopes': list(creds.scopes or []),
+                'email': '',
             }
-
-            # Try to get email address
             try:
                 from googleapiclient.discovery import build
-                svc   = build('gmail','v1',credentials=creds)
-                profile = svc.users().getProfile(userId='me').execute()
-                GMAIL_TOKENS[user_id]['email'] = profile.get('emailAddress','')
-            except Exception:
-                pass
-
+                profile = build('gmail', 'v1', credentials=creds).users().getProfile(userId='me').execute()
+                token_data['email'] = profile.get('emailAddress', '')
+            except Exception as exc:
+                logger.warning('Could not fetch Gmail profile: %s', exc)
+            await _write_bank_state(user_id, 'gmail_token', token_data)
+            request.session['session_id'] = user_id
             return RedirectResponse(url='/bank-sync?gmail=connected')
-
-        except Exception as e:
-            logger.error(f'Gmail callback error: {e}')
-            return RedirectResponse(url=f'/bank-sync?error=gmail_callback')
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.exception('Gmail callback failed: %s', exc)
+            return RedirectResponse(url='/bank-sync?error=gmail_callback')
 
 
     @app.get('/bank/gmail/status')
     async def gmail_status(request: Request):
         """Check if Gmail is connected."""
         uid = _get_user(request)
-        tok = GMAIL_TOKENS.get(uid, {})
-        return {
-            'connected': uid in GMAIL_TOKENS,
-            'email':     tok.get('email', ''),
-        }
+        tok = await _read_bank_state(uid, 'gmail_token') or {}
+        return {'connected': bool(tok), 'email': tok.get('email', '')}
 
 
     @app.get('/bank/gmail/sync')
@@ -457,11 +507,11 @@ def setup_bank_routes(app: FastAPI):
         """
         uid = _get_user(request)
 
-        if uid not in GMAIL_TOKENS:
+        if not await _read_bank_state(uid, 'gmail_token'):
             raise HTTPException(401, detail='Gmail not connected. Visit /bank/gmail/connect')
 
         try:
-            service = _gmail_service(uid)
+            service = await _gmail_service(uid)
         except Exception as e:
             raise HTTPException(503, detail=str(e))
 
@@ -576,7 +626,7 @@ def setup_bank_routes(app: FastAPI):
     async def gmail_disconnect(request: Request):
         """Remove Gmail connection."""
         uid = _get_user(request)
-        GMAIL_TOKENS.pop(uid, None)
+        await _delete_bank_state(uid, 'gmail_token')
         return {'status':'disconnected'}
 
 
@@ -719,7 +769,7 @@ def setup_bank_routes(app: FastAPI):
             env = os.getenv('PLAID_ENV','sandbox')
             host = {
                 'sandbox':    plaid.Environment.Sandbox,
-                'development':plaid.Environment.Development,
+                'development':plaid.Environment.Sandbox,
                 'production': plaid.Environment.Production,
             }.get(env, plaid.Environment.Sandbox)
 
@@ -754,7 +804,7 @@ def setup_bank_routes(app: FastAPI):
             req = LinkTokenCreateRequest(
                 products=[Products('transactions')],
                 client_name='TrackExpensio',
-                country_codes=[CountryCode('US'), CountryCode('IN')],
+                country_codes=[CountryCode('US')],
                 language='en',
                 user=LinkTokenCreateRequestUser(client_user_id=uid),
             )
@@ -778,7 +828,7 @@ def setup_bank_routes(app: FastAPI):
             from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
             req  = ItemPublicTokenExchangeRequest(public_token=body.public_token)
             resp = client.item_public_token_exchange(req)
-            PLAID_TOKENS[uid] = resp.access_token
+            await _write_bank_state(uid, 'plaid_token', resp.access_token)
             return {'status':'connected', 'item_id': resp.item_id}
         except Exception as e:
             raise HTTPException(500, detail=f'Exchange error: {e}')
@@ -788,7 +838,7 @@ def setup_bank_routes(app: FastAPI):
     async def plaid_sync(request: Request, days: int = 30):
         """Fetch real transactions from connected Plaid account."""
         uid   = _get_user(request)
-        token = PLAID_TOKENS.get(uid)
+        token = await _read_bank_state(uid, 'plaid_token')
 
         if not token:
             raise HTTPException(400, detail='No bank connected via Plaid')
@@ -835,7 +885,7 @@ def setup_bank_routes(app: FastAPI):
     async def plaid_balances(request: Request):
         """Get current account balances from Plaid."""
         uid   = _get_user(request)
-        token = PLAID_TOKENS.get(uid)
+        token = await _read_bank_state(uid, 'plaid_token')
         if not token:
             raise HTTPException(400, detail='No bank connected')
 
@@ -925,7 +975,7 @@ def setup_bank_routes(app: FastAPI):
             )
             data = resp.json()
             consent_id = data.get('id','')
-            AA_CONSENTS[uid] = consent_id
+            await _write_bank_state(uid, 'aa_consent', consent_id)
 
             return {
                 'status':       'pending',
@@ -947,7 +997,7 @@ def setup_bank_routes(app: FastAPI):
     async def aa_callback(request: Request, user_id: str = '', demo: bool = False):
         """Handle Setu AA callback after user approves consent."""
         uid        = user_id or _get_user(request)
-        consent_id = AA_CONSENTS.get(uid,'')
+        consent_id = await _read_bank_state(uid, 'aa_consent') or ''
 
         if demo or not consent_id:
             return RedirectResponse(url='/bank-sync?aa=demo')
@@ -984,3 +1034,4 @@ def setup_bank_routes(app: FastAPI):
 
     logger.info('✅ Bank sync routes registered: Gmail, CSV, Plaid, Setu AA, SMS')
     return app
+

@@ -428,3 +428,5 @@ def _coerce_json_response(raw: str) -> Dict[str, Any]:
 def decode_base64_file(payload: str) -> bytes:
     return base64.b64decode(payload.split(",")[-1])
 
+
+

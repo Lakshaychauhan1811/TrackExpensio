@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TrackExpensio Mobile Fix — What to Add</title>
+<style>
+body{font-family:Arial,sans-serif;background:#0d1117;color:#e6edf3;padding:20px;margin:0;}
+.step{background:#161b22;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;margin-bottom:20px;}
+.step-num{background:#58a6ff;color:#000;font-weight:800;padding:4px 12px;border-radius:20px;font-size:0.85rem;display:inline-block;margin-bottom:10px;}
+h2{color:#58a6ff;margin:0 0 10px;}
+code{background:#21262d;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:0.85rem;color:#79c0ff;}
+pre{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;overflow-x:auto;font-size:0.82rem;line-height:1.6;color:#e6edf3;}
+.green{color:#3fb950;}.yellow{color:#d29922;}.red{color:#f85149;}.blue{color:#58a6ff;}.purple{color:#bc8cff;}.orange{color:#f0883e;}
+.file-badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:0.75rem;font-weight:700;margin-bottom:8px;}
+.new{background:rgba(63,185,80,0.2);color:#3fb950;border:1px solid rgba(63,185,80,0.3);}
+.edit{background:rgba(88,166,255,0.2);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);}
+.warn{background:#1a2a1a;border-left:4px solid #3fb950;padding:12px 16px;border-radius:0 8px 8px 0;margin:10px 0;font-size:0.88rem;}
+.tip{background:#1a1a2a;border-left:4px solid #58a6ff;padding:12px 16px;border-radius:0 8px 8px 0;margin:10px 0;font-size:0.88rem;}
+</style>
+</head>
+<body>
+
+<h1 style="text-align:center;color:#58a6ff;">TrackExpensio — Mobile UI Fix Guide</h1>
+<p style="text-align:center;color:#8b949e;">3 files to change. Everything explained step by step.</p>
+
+<!-- STEP 1 -->
+<div class="step">
+  <span class="step-num">STEP 1 of 3</span>
+  <span class="file-badge new">NEW FILE</span>
+  <h2>Create: static/css/mobile_fix.css</h2>
+  <p style="color:#8b949e;">On GitHub: Add file → Create new file → name it <code>static/css/mobile_fix.css</code></p>
+  <p style="color:#8b949e;">Paste this entire CSS:</p>
+  <pre><span class="purple">/* TrackExpensio Mobile Responsive Fix */</span>
+
+<span class="blue">*</span>, <span class="blue">*::before</span>, <span class="blue">*::after</span> {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+<span class="blue">html</span> {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+<span class="blue">body</span> {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+<span class="green">/* ── HEADER ───────────────────────────────────── */</span>
+<span class="blue">.navbar, header, .header</span> {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: nowrap;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+<span class="green">/* Logo — stop it getting cut off */</span>
+<span class="blue">.navbar-brand, .logo, h1.logo</span> {
+  font-size: clamp(0.9rem, 3.5vw, 1.4rem) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 50%;
+  flex-shrink: 1;
+}
+
+<span class="green">/* Header right side buttons */</span>
+<span class="blue">.header-right, .nav-actions</span> {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+<span class="green">/* ── NAV TABS — scrollable on mobile ─────────── */</span>
+<span class="blue">.nav-tabs, .tab-bar</span> {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 0;
+  width: 100%;
+}
+
+<span class="blue">.nav-tabs::-webkit-scrollbar</span> { display: none; }
+
+<span class="blue">.nav-tabs a, .tab-item</span> {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+<span class="green">/* ── MAIN CONTENT ─────────────────────────────── */</span>
+<span class="blue">.main-content, .content, main</span> {
+  padding: 16px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+<span class="green">/* ── STATS CARDS ──────────────────────────────── */</span>
+<span class="blue">.stats-grid, .summary-grid</span> {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+<span class="green">/* ── BUTTONS ──────────────────────────────────── */</span>
+<span class="blue">input, select, textarea</span> {
+  font-size: 16px !important; <span class="purple">/* prevents iOS zoom */</span>
+}
+
+<span class="blue">.btn, button</span> {
+  min-height: 42px;
+  touch-action: manipulation;
+}
+
+<span class="green">/* ── CHAT ─────────────────────────────────────── */</span>
+<span class="blue">.chat-container</span> {
+  height: calc(100dvh - 120px);
+  display: flex;
+  flex-direction: column;
+}
+
+<span class="blue">.chat-messages</span> {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+<span class="blue">.chat-input-area</span> {
+  position: sticky;
+  bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+<span class="green">/* ── MOBILE: up to 640px ──────────────────────── */</span>
+@media (max-width: 640px) {
+
+  <span class="green">/* Hide desktop sidebar */</span>
+  <span class="blue">.sidebar, .left-sidebar, .side-nav</span> {
+    display: none !important;
+  }
+
+  <span class="green">/* Add bottom padding for mobile nav */</span>
+  <span class="blue">.main-content, main</span> {
+    padding-bottom: 80px;
+  }
+
+  <span class="green">/* Full width */</span>
+  <span class="blue">.page-wrapper, .app-layout</span> {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  <span class="green">/* Stack all grids */</span>
+  <span class="blue">.grid-2, .grid-3, .grid-4</span> {
+    grid-template-columns: 1fr !important;
+  }
+
+  <span class="green">/* Keep stats 2-col */</span>
+  <span class="blue">.stats-grid, .summary-grid</span> {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  <span class="green">/* Logo */</span>
+  <span class="blue">.logo, .navbar-brand</span> {
+    font-size: clamp(0.85rem, 3vw, 1rem) !important;
+  }
+
+  <span class="green">/* Hide username text */</span>
+  <span class="blue">.user-name, .username</span> {
+    display: none !important;
+  }
+
+  <span class="green">/* Hero section */</span>
+  <span class="blue">.hero h1</span> {
+    font-size: clamp(1.5rem, 5vw, 2.2rem) !important;
+  }
+
+  <span class="green">/* Horizontal scroll for tables */</span>
+  <span class="blue">.table-wrapper</span> {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  <span class="green">/* Stack hero buttons */</span>
+  <span class="blue">.hero-buttons, .cta-buttons</span> {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  <span class="blue">.hero-buttons .btn</span> {
+    width: 100%;
+    justify-content: center;
+  }
+
+  <span class="green">/* Feature cards stack */</span>
+  <span class="blue">.feature-grid, .features-row</span> {
+    flex-direction: column !important;
+    gap: 12px;
+  }
+}
+
+<span class="green">/* ── TABLET: 641px to 1024px ──────────────────── */</span>
+@media (min-width: 641px) and (max-width: 1024px) {
+  <span class="blue">.sidebar</span> { width: 200px !important; }
+  <span class="blue">.grid-3, .grid-4</span> { grid-template-columns: repeat(2, 1fr) !important; }
+  <span class="blue">.stats-grid</span> { grid-template-columns: repeat(3, 1fr) !important; }
+}
+
+<span class="green">/* ── DESKTOP: 1025px+ ─────────────────────────── */</span>
+@media (min-width: 1025px) {
+  <span class="blue">.sidebar</span> {
+    display: block !important;
+    width: 240px;
+  }
+
+  <span class="blue">.app-layout</span> {
+    display: flex;
+    flex-direction: row;
+  }
+
+  <span class="blue">.user-name, .username</span> {
+    display: inline !important;
+  }
+}
+
+<span class="green">/* ── SAFE AREAS (iPhone notch) ─────────────────── */</span>
+<span class="blue">body</span> {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}</pre>
+</div>
+
+<!-- STEP 2 -->
+<div class="step">
+  <span class="step-num">STEP 2 of 3</span>
+  <span class="file-badge edit">EDIT FILE</span>
+  <h2>Edit: templates/expense_tracker.html</h2>
+  <p style="color:#8b949e;">Find the <code>&lt;head&gt;</code> section. Find where your existing CSS is linked. Add this line RIGHT AFTER your existing CSS link:</p>
+  <pre><span class="green">&lt;!-- Existing CSS (already there, don't touch) --&gt;</span>
+&lt;link rel="stylesheet" href="/static/css/expense_tracker.css"&gt;
+
+<span class="yellow">&lt;!-- ADD THIS LINE RIGHT BELOW YOUR EXISTING CSS --&gt;</span>
+&lt;link rel="stylesheet" href="/static/css/mobile_fix.css"&gt;</pre>
+
+  <div class="tip">💡 Also make sure your viewport meta tag looks exactly like this (find it in &lt;head&gt; and update it):</div>
+  <pre>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"&gt;</pre>
+
+  <p style="color:#8b949e;margin-top:16px;">Now find where your navigation links are (Dashboard, AI Chat, Expenses). Wrap them in a scrollable container if not already done:</p>
+  <pre><span class="green">&lt;!-- FIND YOUR NAV LINKS AND WRAP LIKE THIS: --&gt;</span>
+&lt;div class="nav-tabs"&gt;
+  &lt;a href="/dashboard" class="tab-item <span class="yellow">active</span>"&gt;
+    &lt;i class="fas fa-chart-line"&gt;&lt;/i&gt; Dashboard
+  &lt;/a&gt;
+  &lt;a href="/ai-chat" class="tab-item"&gt;
+    &lt;i class="fas fa-robot"&gt;&lt;/i&gt; AI Chat
+  &lt;/a&gt;
+  &lt;a href="/expenses" class="tab-item"&gt;
+    &lt;i class="fas fa-receipt"&gt;&lt;/i&gt; Expenses
+  &lt;/a&gt;
+  &lt;a href="/bank-sync" class="tab-item"&gt;
+    &lt;i class="fas fa-university"&gt;&lt;/i&gt; Bank Sync
+  &lt;/a&gt;
+&lt;/div&gt;</pre>
+</div>
+
+<!-- STEP 3 -->
+<div class="step">
+  <span class="step-num">STEP 3 of 3</span>
+  <span class="file-badge edit">EDIT FILE</span>
+  <h2>Edit: static/css/expense_tracker.css</h2>
+  <p style="color:#8b949e;">Find these existing styles in your CSS and UPDATE them. Search for each one and replace:</p>
+
+  <p><strong style="color:#f0883e;">Find and replace: logo/brand styles</strong></p>
+  <pre><span class="green">/* FIND SOMETHING LIKE THIS: */</span>
+.logo { font-size: 1.4rem; }
+
+<span class="yellow">/* REPLACE WITH: */</span>
+.logo {
+  font-size: clamp(0.9rem, 3.5vw, 1.4rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 55%;
+}</pre>
+
+  <p><strong style="color:#f0883e;">Find and replace: header/navbar styles</strong></p>
+  <pre><span class="green">/* FIND SOMETHING LIKE THIS: */</span>
+.header { display: flex; padding: 16px 24px; }
+
+<span class="yellow">/* REPLACE WITH: */</span>
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  flex-wrap: nowrap;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}</pre>
+
+  <p><strong style="color:#f0883e;">Find and replace: grid layouts</strong></p>
+  <pre><span class="green">/* ADD THIS at the bottom of your expense_tracker.css: */</span>
+@media (max-width: 640px) {
+  .stats-row,
+  .cards-row {
+    flex-direction: column !important;
+    gap: 10px;
+  }
+
+  .stat-card {
+    width: 100% !important;
+    min-width: unset !important;
+  }
+
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}</pre>
+</div>
+
+<!-- RESULT -->
+<div style="background:#0d2818;border:1px solid #3fb950;border-radius:12px;padding:20px;margin-top:10px;">
+  <h2 style="color:#3fb950;margin-top:0;">✅ After These 3 Steps</h2>
+  <table style="width:100%;border-collapse:collapse;">
+    <tr>
+      <th style="text-align:left;padding:8px;color:#8b949e;border-bottom:1px solid rgba(255,255,255,0.08);">Screen Size</th>
+      <th style="text-align:left;padding:8px;color:#8b949e;border-bottom:1px solid rgba(255,255,255,0.08);">Layout</th>
+    </tr>
+    <tr>
+      <td style="padding:8px;color:#e6edf3;">📱 Mobile (< 640px)</td>
+      <td style="padding:8px;color:#3fb950;">Single column, scrollable tabs, logo fits, no overflow</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;color:#e6edf3;">📱 Tablet (641–1024px)</td>
+      <td style="padding:8px;color:#3fb950;">2-column grid, compact sidebar</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;color:#e6edf3;">🖥️ Desktop (> 1024px)</td>
+      <td style="padding:8px;color:#3fb950;">Full sidebar, 3-4 column grid, all original layout</td>
+    </tr>
+  </table>
+</div>
+
+</body>
+</html>

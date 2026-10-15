@@ -3391,3 +3391,4 @@ if __name__ == "__main__":
     # For Claude Desktop, use STDIO transport
     # For HTTP server, use: mcp.run(transport="http", host="0.0.0.0", port=8000)
     mcp.run()  # Default is STDIO, which Claude Desktop uses
+

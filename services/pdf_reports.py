@@ -96,3 +96,4 @@ def build_financial_report_pdf(report: Dict[str, Any]) -> bytes:
 
     doc.build(story)
     return buffer.getvalue()
+

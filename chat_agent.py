@@ -2022,3 +2022,4 @@ def _detect_currency(text: str) -> str:
     # Default to INR if no currency explicitly mentioned
     return "INR"
 
+

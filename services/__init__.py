@@ -1,1 +1,2 @@
-"""TrackExpensio service modules (bank sync, Gmail, RAG, notifications, etc.)."""
+"""TrackExpensio service modules."""
+

@@ -168,3 +168,4 @@ if (document.readyState === 'loading') {
 } else {
     checkMicrophoneSupport();
 }
+

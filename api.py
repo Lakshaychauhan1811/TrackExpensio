@@ -35,6 +35,7 @@ import io
 import tempfile
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
+from google_oauth_fix import router as google_router
 
 from main import (
     TOOL_REGISTRY,
@@ -196,6 +197,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 setup_bank_routes(app)
+app.include_router(google_router)
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")

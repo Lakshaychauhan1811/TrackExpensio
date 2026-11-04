@@ -169,23 +169,42 @@ async def _bill_reminder_scheduler() -> None:
         await asyncio.sleep(interval)
 
 
+```python
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Lifespan context manager for startup and shutdown events"""
-    await _ensure_all_indexes()
+    """Lifespan context manager for startup and shutdown events."""
+
+    is_vercel = bool(os.getenv("VERCEL"))
+
+    # Skip startup index creation on Vercel serverless.
+    if not is_vercel:
+        await _ensure_all_indexes()
+
     if notification_service.email_configured():
         print("✅ Bill email reminders enabled (SMTP configured)")
     else:
         print("ℹ️ Bill email reminders off — set SMTP_* in .env to enable")
-    reminder_task = asyncio.create_task(_bill_reminder_scheduler())
+
+    # Background schedulers are not suitable for Vercel serverless.
+    reminder_task = None
+
+    if not is_vercel:
+        reminder_task = asyncio.create_task(_bill_reminder_scheduler())
+
     print("🚀 TrackExpensio API started successfully")
-    yield
-    reminder_task.cancel()
+
     try:
-        await reminder_task
-    except asyncio.CancelledError:
-        pass
-    print("👋 TrackExpensio API shutting down")
+        yield
+    finally:
+        if reminder_task is not None:
+            reminder_task.cancel()
+            try:
+                await reminder_task
+            except asyncio.CancelledError:
+                pass
+
+        print("👋 TrackExpensio API shutting down")
+```
 
 
 app = FastAPI(title="TrackExpensio API", lifespan=lifespan)

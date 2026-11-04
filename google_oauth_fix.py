@@ -198,6 +198,6 @@ async def google_callback(request: Request, code: str = "", state: str = "", err
         logger.exception("Google callback failed")
         return _result_page(False, f"Sign-in failed ({type(exc).__name__}). Check the Vercel logs.")
 
-    response = _result_page(True, "Google account connected")
-    response.delete_cookie(COOKIE_NAME)
-    return response
+   response = _result_page(True, "Google account connected")
+   response.delete_cookie(COOKIE_NAME)
+   return response
